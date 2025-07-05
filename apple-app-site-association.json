@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.ai.dearflow.email"],
+        "components": [
+          {
+            "/": "/oauth/callback",
+            "comment": "OAuth callback for inbox connection"
+          },
+          {
+            "/": "/app/*",
+            "comment": "Deep links to app screens"
+          }
+        ]
+      }
+    ]
+  }
+}
