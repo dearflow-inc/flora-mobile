@@ -12,6 +12,8 @@ import { todoService } from "@/services/todoService";
 import { profileService } from "@/services/profileService";
 import { emailService } from "@/services/emailService";
 import { toolExecutionService } from "@/services/toolExecutionService";
+import { userTaskService } from "@/services/userTaskService";
+import { scenariosService } from "@/services/scenariosService";
 import { secureStorage } from "@/services/secureStorage";
 
 const initialState: AuthState = {
@@ -245,6 +247,13 @@ export const authSlice = createSlice({
           action.payload.authToken,
           action.payload.refreshToken
         );
+        userTaskService.setAuthToken(
+          `JWT ${action.payload.authToken};;;;;${action.payload.refreshToken}`
+        );
+        scenariosService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
       })
       .addCase(signInAsync.rejected, (state, action) => {
         state.isLoading = false;
@@ -294,6 +303,13 @@ export const authSlice = createSlice({
           action.payload.refreshToken
         );
         toolExecutionService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        userTaskService.setAuthToken(
+          `JWT ${action.payload.authToken};;;;;${action.payload.refreshToken}`
+        );
+        scenariosService.setAuthToken(
           action.payload.authToken,
           action.payload.refreshToken
         );
@@ -364,6 +380,13 @@ export const authSlice = createSlice({
           action.payload.authToken,
           action.payload.refreshToken
         );
+        userTaskService.setAuthToken(
+          `JWT ${action.payload.authToken};;;;;${action.payload.refreshToken}`
+        );
+        scenariosService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
       })
       .addCase(refreshAuthAsync.rejected, (state) => {
         state.user = null;
@@ -415,6 +438,13 @@ export const authSlice = createSlice({
           action.payload.refreshToken
         );
         toolExecutionService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        userTaskService.setAuthToken(
+          `JWT ${action.payload.authToken};;;;;${action.payload.refreshToken}`
+        );
+        scenariosService.setAuthToken(
           action.payload.authToken,
           action.payload.refreshToken
         );

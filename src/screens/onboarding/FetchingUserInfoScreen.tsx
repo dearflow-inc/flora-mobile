@@ -16,6 +16,8 @@ import { fetchChatAsync } from "@/store/slices/chatSlice";
 import { OnboardingStackParamList } from "@/types/navigation";
 import { useTheme } from "@/hooks/useTheme";
 import { fetchUserInfoAsync } from "@/store/slices/profileSlice";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 type FetchingUserInfoScreenNavigationProp = NativeStackNavigationProp<
   OnboardingStackParamList,
@@ -39,7 +41,10 @@ export const FetchingUserInfoScreen = () => {
   const { isLoading: isChatLoading } = useAppSelector((state) => state.chat);
   const { currentProfile } = useAppSelector((state) => state.profile);
   const [isPolling, setIsPolling] = useState(false);
-  const [chatFound, setChatFound] = useState(false);
+  const chatFound = useSelector(
+    (state: RootState) =>
+      state.chat.currentChat?.id === currentProfile?.id + "-onboarding"
+  );
   const [pollingAttempts, setPollingAttempts] = useState(0);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [typedText, setTypedText] = useState("");
@@ -132,7 +137,7 @@ export const FetchingUserInfoScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Setting Up Your Chat</Text>
+          <Text style={styles.title}>Reading your inbox...</Text>
           <Text style={styles.subtitle}>
             We're preparing your personalized onboarding experience
           </Text>
