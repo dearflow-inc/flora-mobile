@@ -78,7 +78,7 @@ export const ProfileScreen = () => {
     // Fetch profile when component mounts
     dispatch(fetchMyProfileAsync());
     // Fetch email usage data
-    dispatch(fetchUsageAsync("emails"));
+    dispatch(fetchUsageAsync("email_inbox_email_classified"));
   }, [dispatch]);
 
   useEffect(() => {

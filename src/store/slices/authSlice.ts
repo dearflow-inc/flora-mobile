@@ -166,6 +166,7 @@ export const fetchUsageAsync = createAsyncThunk<
 >("auth/fetchUsage", async (type, { rejectWithValue }) => {
   try {
     const response = await authService.getUsageByType(type);
+    console.log("response", response);
     return response;
   } catch (error: any) {
     return rejectWithValue(error.message || "Failed to fetch usage");

@@ -120,30 +120,21 @@ export const TodoDetailScreen = () => {
     const newState =
       currentTodo.state === TodoState.DONE ? TodoState.PENDING : TodoState.DONE;
 
-    const actionText =
-      currentTodo.state === TodoState.DONE
-        ? "mark as pending"
-        : "mark as completed";
+    try {
+      await dispatch(
+        updateTodoStateAsync({
+          id: currentTodo.id,
+          data: { state: newState },
+        })
+      ).unwrap();
 
-    Alert.alert("Confirm", `Are you sure you want to ${actionText}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Confirm",
-        onPress: async () => {
-          try {
-            await dispatch(
-              updateTodoStateAsync({
-                id: currentTodo.id,
-                data: { state: newState },
-              })
-            ).unwrap();
-            Alert.alert("Success", `Todo ${actionText}d successfully`);
-          } catch (error) {
-            console.error("Failed to update todo state:", error);
-          }
-        },
-      },
-    ]);
+      // Close the detail view when marking as complete
+      if (newState === TodoState.DONE) {
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error("Failed to update todo state:", error);
+    }
   };
 
   const handleBack = () => {

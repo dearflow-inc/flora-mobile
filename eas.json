@@ -1,0 +1,36 @@
+{
+  "cli": {
+    "version": ">= 16.13.4",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EAS_BUILD_PROFILE": "preview"
+      }
+    },
+    "testflight": {
+      "distribution": "store",
+      "env": {
+        "EAS_BUILD_PROFILE": "preview"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EAS_BUILD_PROFILE": "production"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
