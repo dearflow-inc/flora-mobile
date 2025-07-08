@@ -17,6 +17,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
+import { CustomAvatar } from "@/components/ui/CustomAvatar";
 import {
   selectEmailDrafts,
   createToolExecutionAsync,
@@ -46,6 +47,33 @@ const { width: screenWidth } = Dimensions.get("window");
 const SIDEBAR_WIDTH = screenWidth * 0.75;
 
 type UserTaskFilter = "inbox" | "archived" | "sent" | "snoozed" | "trash";
+
+const MOTIVATIONAL_MESSAGES = [
+  "Sing like nobody is listening",
+  "Try origami",
+  "Dance in the rain",
+  "Write a letter to your future self",
+  "Learn a new word today",
+  "Call someone you haven't talked to in a while",
+  "Take a photo of something beautiful",
+  "Practice gratitude",
+  "Try a new recipe",
+  "Watch the sunset",
+  "Plant something",
+  "Read a poem",
+  "Learn to juggle",
+  "Create something with your hands",
+  "Listen to a new genre of music",
+  "Write down three things that made you smile today",
+  "Try drawing with your non-dominant hand",
+  "Go for a walk without your phone",
+  "Learn to say 'hello' in a new language",
+  "Practice mindful breathing for 5 minutes",
+  "Compliment a stranger",
+  "Try to solve a puzzle",
+  "Watch clouds and find shapes",
+  "Write a haiku about your day",
+];
 
 export const EmailsScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -378,8 +406,7 @@ export const EmailsScreen = () => {
   };
 
   const handleTaskPress = (task: UserTask) => {
-    // TODO: Navigate to task detail screen
-    console.log("Task pressed:", task.id);
+    navigation.navigate("UserTaskDetail", { userTaskId: task.id });
   };
 
   const handleEmailPress = (email: EmailWithoutContent) => {
@@ -538,6 +565,38 @@ export const EmailsScreen = () => {
     return `${timeString} • ${dateString_formatted}`;
   };
 
+  const getTaskActions = (task: UserTask): string[] => {
+    // Get actions from the task's actions array
+    const actions =
+      task.actions?.map((action) => {
+        // Convert action type to readable format
+        switch (action.type) {
+          case UserTaskType.EMAIL_READ:
+            return "Read";
+          case UserTaskType.EMAIL_REPLY:
+            return "Reply";
+          case UserTaskType.EMAIL_FOLLOW_UP:
+            return "Follow Up";
+          case UserTaskType.EMAIL_SCHEDULER:
+            return "Schedule";
+          case UserTaskType.EMAIL_SEND:
+            return "Send";
+          case UserTaskType.EMAIL_CLEAN_UP:
+            return "Clean Up";
+          case UserTaskType.CONTACT_EMAIL_ADDRESS_UNSUBSCRIBE:
+            return "Unsubscribe";
+          default:
+            // Remove underscores and capitalize
+            return action.type
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+        }
+      }) || [];
+
+    // If no actions are defined, default to "Read"
+    return actions.length > 0 ? actions : ["Read"];
+  };
+
   const renderUserTask = ({ item }: { item: UserTask }) => {
     const senderInfo = getEmailSenderInfo(item);
 
@@ -546,71 +605,61 @@ export const EmailsScreen = () => {
         style={[styles.emailItem, styles.taskItem]}
         onPress={() => handleTaskPress(item)}
       >
-        <View style={styles.emailHeader}>
-          <View style={styles.emailInfo}>
-            <View style={styles.taskHeaderLeft}>
-              {senderInfo.isFromEmail ? (
-                <>
-                  <Text style={[styles.sender, styles.taskSender]}>
-                    {senderInfo.name}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <View style={styles.floraTaskHeader}>
-                    <Image
-                      source={require("../../../assets/images/flora.png")}
-                      style={styles.floraTaskIcon}
-                      resizeMode="contain"
-                    />
-                    <Text style={[styles.sender, styles.taskSender]}>
-                      Flora
+        <View style={styles.gmailLayout}>
+          {/* Avatar Column */}
+          <View style={styles.avatarColumn}>
+            <CustomAvatar
+              src={senderInfo.isFromEmail ? undefined : undefined}
+              alt={senderInfo.isFromEmail ? senderInfo.name : "Flora"}
+              size={40}
+            />
+          </View>
+
+          {/* Content Column */}
+          <View style={styles.contentColumn}>
+            {/* Name and Date Row */}
+            <View style={styles.nameRow}>
+              <Text style={[styles.sender, styles.taskSender]}>
+                {senderInfo.name}
+              </Text>
+              <Text style={styles.timestamp}>
+                {formatTimestamp(item.createdAt)}
+              </Text>
+            </View>
+
+            {/* Title */}
+            <Text style={[styles.subject, styles.taskTitle]}>
+              {item.title || item.description}
+            </Text>
+
+            {/* Description and Action Tags Row */}
+            <View style={styles.descriptionRow}>
+              {item.title && (
+                <Text style={styles.preview} numberOfLines={1}>
+                  {item.description}
+                </Text>
+              )}
+              <View style={styles.actionChipsContainer}>
+                {getTaskActions(item).map((action, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.actionChip,
+                      {
+                        backgroundColor: colors.primary + "15",
+                        borderColor: colors.primary + "40",
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.actionChipText, { color: colors.primary }]}
+                    >
+                      {action}
                     </Text>
                   </View>
-                </>
-              )}
+                ))}
+              </View>
             </View>
-            <Text style={styles.timestamp}>
-              {formatTimestamp(item.createdAt)}
-            </Text>
-          </View>
-          <View style={styles.taskMeta}>
-            <Text style={styles.importance}>{item.importance}/10</Text>
-            {item.userRated && (
-              <MaterialIcons name="star" size={16} color="#FFD700" />
-            )}
-          </View>
-        </View>
-        <Text style={[styles.subject, styles.taskTitle]}>
-          {item.title || item.description}
-        </Text>
-        <Text style={styles.preview} numberOfLines={2}>
-          {item.title ? item.description : "Click to view details"}
-        </Text>
-        <View style={styles.taskFooter}>
-          <View
-            style={[
-              styles.statusBadge,
-              selectedContextViewId === null
-                ? {
-                    backgroundColor:
-                      getOriginalSpaceColorById(item.contextViewId) + "20",
-                  }
-                : getStatusStyle(item.status),
-            ]}
-          >
-            <Text
-              style={[
-                styles.statusText,
-                selectedContextViewId === null
-                  ? { color: getSpaceColorById(item.contextViewId) }
-                  : {},
-              ]}
-            >
-              {selectedContextViewId === null
-                ? getSpaceNameById(item.contextViewId)
-                : item.status}
-            </Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -625,49 +674,66 @@ export const EmailsScreen = () => {
       ]}
       onPress={() => handleEmailPress(item)}
     >
-      <View style={styles.emailHeader}>
-        <View style={styles.emailInfo}>
+      <View style={styles.gmailLayout}>
+        {/* Avatar Column */}
+        <View style={styles.avatarColumn}>
+          <CustomAvatar
+            src={item.from.meta?.avatar}
+            alt={item.from.meta?.name || item.from.meta?.email || "Unknown"}
+            size={40}
+          />
+        </View>
+
+        {/* Content Column */}
+        <View style={styles.contentColumn}>
+          {/* Name and Date Row */}
+          <View style={styles.nameRow}>
+            <Text
+              style={[
+                styles.sender,
+                !item.status?.internalRead && styles.unreadText,
+              ]}
+            >
+              {item.from.meta?.name || item.from.meta?.email || "Unknown"}
+            </Text>
+            <View style={styles.rightSection}>
+              <Text style={styles.timestamp}>{formatTimestamp(item.sent)}</Text>
+              <TouchableOpacity onPress={() => {}}>
+                <MaterialIcons
+                  name={
+                    item.externalLabels.includes(EmailLabel.STARRED)
+                      ? "star"
+                      : "star-border"
+                  }
+                  size={16}
+                  color={
+                    item.externalLabels.includes(EmailLabel.STARRED)
+                      ? "#FFD700"
+                      : "#CCCCCC"
+                  }
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Title */}
           <Text
             style={[
-              styles.sender,
+              styles.subject,
               !item.status?.internalRead && styles.unreadText,
             ]}
           >
-            {item.from.meta?.name || item.from.meta?.email || "Unknown"}
+            {item.subject}
           </Text>
-          <Text style={styles.timestamp}>{formatTimestamp(item.sent)}</Text>
+
+          {/* Description Row */}
+          <View style={styles.descriptionRow}>
+            <Text style={styles.preview} numberOfLines={1}>
+              {item.previewText || "No preview available"}
+            </Text>
+          </View>
         </View>
-        <TouchableOpacity
-          onPress={() => {
-            /* TODO: Toggle star */
-          }}
-        >
-          <MaterialIcons
-            name={
-              item.externalLabels.includes(EmailLabel.STARRED)
-                ? "star"
-                : "star-border"
-            }
-            size={20}
-            color={
-              item.externalLabels.includes(EmailLabel.STARRED)
-                ? "#FFD700"
-                : "#CCCCCC"
-            }
-          />
-        </TouchableOpacity>
       </View>
-      <Text
-        style={[
-          styles.subject,
-          !item.status?.internalRead && styles.unreadText,
-        ]}
-      >
-        {item.subject}
-      </Text>
-      <Text style={styles.preview} numberOfLines={2}>
-        {item.previewText || "No preview available"}
-      </Text>
       {!item.status?.internalRead && <View style={styles.unreadIndicator} />}
     </TouchableOpacity>
   );
@@ -681,26 +747,49 @@ export const EmailsScreen = () => {
         style={[styles.emailItem, styles.draftItem]}
         onPress={() => handleDraftPress(item.id)}
       >
-        <View style={styles.emailHeader}>
-          <View style={styles.emailInfo}>
-            <Text style={styles.sender}>
-              Draft to:{" "}
-              {Array.isArray(emailData.to)
-                ? emailData.to.join(", ")
-                : "Unknown"}
-            </Text>
-            <Text style={styles.timestamp}>
-              {formatTimestamp(item.updatedAt)}
-            </Text>
+        <View style={styles.gmailLayout}>
+          {/* Avatar Column */}
+          <View style={styles.avatarColumn}>
+            <CustomAvatar alt="Draft" size={40} />
           </View>
-          <MaterialIcons name="edit" size={20} color={colors.textSecondary} />
+
+          {/* Content Column */}
+          <View style={styles.contentColumn}>
+            {/* Name and Date Row */}
+            <View style={styles.nameRow}>
+              <Text style={styles.sender}>
+                Draft to:{" "}
+                {Array.isArray(emailData.to)
+                  ? emailData.to.join(", ")
+                  : "Unknown"}
+              </Text>
+              <View style={styles.rightSection}>
+                <Text style={styles.timestamp}>
+                  {formatTimestamp(item.updatedAt)}
+                </Text>
+                <MaterialIcons
+                  name="edit"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+              </View>
+            </View>
+
+            {/* Title */}
+            <Text style={styles.subject}>
+              {emailData.subject || "No subject"}
+            </Text>
+
+            {/* Description Row */}
+            <View style={styles.descriptionRow}>
+              <Text style={styles.preview} numberOfLines={1}>
+                {emailData.body
+                  ? emailData.body.substring(0, 100) + "..."
+                  : "No content"}
+              </Text>
+            </View>
+          </View>
         </View>
-        <Text style={styles.subject}>{emailData.subject || "No subject"}</Text>
-        <Text style={styles.preview}>
-          {emailData.body
-            ? emailData.body.substring(0, 100) + "..."
-            : "No content"}
-        </Text>
       </TouchableOpacity>
     );
   };
@@ -839,6 +928,25 @@ export const EmailsScreen = () => {
     </Animated.View>
   );
 
+  const getRandomMotivationalMessage = () => {
+    const randomIndex = Math.floor(
+      Math.random() * MOTIVATIONAL_MESSAGES.length
+    );
+    return MOTIVATIONAL_MESSAGES[randomIndex];
+  };
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyStateContainer}>
+      <View style={styles.emptyStateIconContainer}>
+        <MaterialIcons name="task-alt" size={80} color={colors.textSecondary} />
+      </View>
+      <Text style={styles.emptyStateTitle}>All caught up!</Text>
+      <Text style={styles.emptyStateMotivationalMessage}>
+        {getRandomMotivationalMessage()}
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <PanGestureHandler onHandlerStateChange={onPanGestureEvent}>
@@ -855,7 +963,7 @@ export const EmailsScreen = () => {
               />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search tasks..."
+                placeholder="Search..."
                 placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -866,7 +974,7 @@ export const EmailsScreen = () => {
           <View style={styles.contextFilterContainer}>
             <FlatList
               data={[
-                { id: null, name: "All", color: colors.primary },
+                { id: null, name: "Important", color: colors.primary },
                 ...(contextViews || [])
                   .sort((a, b) => b.importance - a.importance) // Sort by importance (highest first)
                   .map((cv) => ({
@@ -915,19 +1023,23 @@ export const EmailsScreen = () => {
             />
           </View>
 
-          <FlatList
-            data={filteredUserTasks}
-            renderItem={renderUserTask}
-            keyExtractor={(item) => item.id}
-            style={styles.emailsList}
-            contentContainerStyle={styles.emailsContainer}
-            showsVerticalScrollIndicator={false}
-            refreshing={isLoading || scenariosLoading}
-            onRefresh={() => {
-              dispatch(fetchUserTasksAsync({}));
-              dispatch(fetchMyScenarios());
-            }}
-          />
+          {filteredUserTasks.length === 0 && !isLoading && renderEmptyState()}
+
+          {filteredUserTasks.length > 0 && (
+            <FlatList
+              data={filteredUserTasks}
+              renderItem={renderUserTask}
+              keyExtractor={(item) => item.id}
+              style={styles.emailsList}
+              contentContainerStyle={styles.emailsContainer}
+              showsVerticalScrollIndicator={false}
+              refreshing={isLoading || scenariosLoading}
+              onRefresh={() => {
+                dispatch(fetchUserTasksAsync({}));
+                dispatch(fetchMyScenarios());
+              }}
+            />
+          )}
         </SafeAreaView>
       </PanGestureHandler>
 
@@ -962,8 +1074,8 @@ const createStyles = (colors: any) =>
     header: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
       backgroundColor: colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
@@ -999,7 +1111,7 @@ const createStyles = (colors: any) =>
     },
     emailItem: {
       backgroundColor: colors.surface,
-      padding: 16,
+      padding: 12,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
       position: "relative",
@@ -1020,7 +1132,48 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 8,
+      marginBottom: 6,
+    },
+    avatarSenderContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+    },
+    senderInfo: {
+      marginLeft: 8,
+      flex: 1,
+    },
+    gmailLayout: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+    },
+    avatarColumn: {
+      width: 48,
+      alignItems: "center",
+      paddingTop: 2,
+    },
+    contentColumn: {
+      flex: 1,
+      marginLeft: 8,
+    },
+    nameRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    rightSection: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    descriptionRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 2,
     },
     emailInfo: {
       flex: 1,
@@ -1043,23 +1196,23 @@ const createStyles = (colors: any) =>
       borderRadius: 4,
     },
     sender: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: "500",
       color: colors.text,
       flex: 1,
     },
     taskSender: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: "600",
       color: colors.text,
     },
     taskType: {
-      fontSize: 12,
+      fontSize: 11,
       color: colors.textSecondary,
-      marginTop: 2,
+      marginTop: 1,
     },
     timestamp: {
-      fontSize: 12,
+      fontSize: 11,
       color: colors.textSecondary,
     },
     taskMeta: {
@@ -1073,21 +1226,21 @@ const createStyles = (colors: any) =>
       fontWeight: "500",
     },
     subject: {
-      fontSize: 16,
+      fontSize: 14,
+      color: colors.text,
+      marginBottom: 3,
+    },
+    taskTitle: {
+      fontSize: 14,
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 4,
     },
-    taskTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 6,
-    },
     preview: {
-      fontSize: 14,
+      fontSize: 13,
       color: colors.textSecondary,
-      lineHeight: 20,
-      marginBottom: 8,
+      lineHeight: 18,
+      marginBottom: 6,
     },
     taskFooter: {
       flexDirection: "row",
@@ -1248,11 +1401,11 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-      paddingVertical: 12,
+      paddingVertical: 8,
     },
     contextChipsContainer: {
-      paddingHorizontal: 16,
-      gap: 8,
+      paddingHorizontal: 12,
+      gap: 6,
     },
     contextChip: {
       paddingHorizontal: 16,
@@ -1288,5 +1441,72 @@ const createStyles = (colors: any) =>
       fontSize: 14,
       fontWeight: "600",
       textAlign: "center",
+    },
+    actionChipsContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 3,
+    },
+    actionChip: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginRight: 3,
+      marginBottom: 1,
+    },
+    actionChipText: {
+      fontSize: 10,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+    emptyStateContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+      backgroundColor: colors.background,
+    },
+    emptyStateIconContainer: {
+      marginBottom: 20,
+      opacity: 0.7,
+    },
+    emptyStateTitle: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 16,
+      textAlign: "center",
+    },
+    emptyStateMotivationalMessage: {
+      fontSize: 18,
+      color: colors.primary,
+      textAlign: "center",
+      marginBottom: 30,
+      lineHeight: 24,
+      fontStyle: "italic",
+      fontWeight: "500",
+    },
+    emptyStateButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      borderRadius: 28,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    emptyStateButtonText: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: "600",
+      marginLeft: 10,
     },
   });

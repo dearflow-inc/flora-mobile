@@ -18,6 +18,7 @@
       }
     },
     "testflight": {
+      "autoIncrement": true,
       "distribution": "store",
       "env": {
         "EAS_BUILD_PROFILE": "preview"
@@ -31,6 +32,11 @@
     }
   },
   "submit": {
+    "testflight": {
+      "ios": {
+        "appleId": "tools@dearflow.ai"
+      }
+    },
     "production": {}
   }
 }

@@ -12,6 +12,7 @@ import { ProfileScreen } from "@/screens/main/ProfileScreen";
 import { SettingsScreen } from "@/screens/main/SettingsScreen";
 import { ContactSupportScreen } from "@/screens/main/ContactSupportScreen";
 import { ToolExecutionScreen } from "@/screens/main/ToolExecutionScreen";
+import { UserTaskScreen } from "@/screens/main/UserTaskScreen";
 import { useTheme } from "@/hooks/useTheme";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -107,6 +108,11 @@ export const AppStackNavigator = () => {
       <Stack.Screen
         name="ToolExecution"
         component={ToolExecutionScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="UserTaskDetail"
+        component={UserTaskScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

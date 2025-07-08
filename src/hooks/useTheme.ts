@@ -6,6 +6,7 @@ export interface ThemeColors {
   text: string;
   textSecondary: string;
   border: string;
+  borderLight: string;
   primary: string;
   danger: string;
   success: string;
@@ -19,6 +20,7 @@ const lightTheme: ThemeColors = {
   text: "#333333",
   textSecondary: "#666666",
   border: "#E0E0E0",
+  borderLight: "#4E4E50",
   primary: "#4285DA",
   danger: "#FF3B30",
   success: "#34C759",
@@ -32,6 +34,7 @@ const darkTheme: ThemeColors = {
   text: "#FFFFFF",
   textSecondary: "#AEAEB2",
   border: "#38383A",
+  borderLight: "#5E5E60",
   primary: "#4285DA",
   danger: "#FF453A",
   success: "#30D158",

@@ -491,4 +491,10 @@ export const selectDeletedUserTasks = (state: RootState) =>
     (task) => task.status === UserTaskStatus.DELETED
   );
 
+export const selectUserTaskById = (state: RootState, taskId: string) =>
+  state.userTasks.userTasks.find((task) => task.id === taskId) ||
+  (state.userTasks.selectedUserTask?.id === taskId
+    ? state.userTasks.selectedUserTask
+    : null);
+
 export default userTaskSlice.reducer;

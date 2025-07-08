@@ -31,6 +31,7 @@ export type AppStackParamList = {
   ContactSupport: undefined;
   TodoDetail: { todoId: string };
   ToolExecution: { toolExecutionId: string };
+  UserTaskDetail: { userTaskId: string };
 };
 
 export type MainTabParamList = {
