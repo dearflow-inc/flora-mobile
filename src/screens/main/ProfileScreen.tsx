@@ -27,6 +27,7 @@ import {
 } from "@/store/slices/profileSlice";
 import { DearflowPaymentPlan, UpdateMyProfileRequest } from "@/types/profile";
 import { DearflowPaymentPlan as AuthDearflowPaymentPlan } from "@/types/auth";
+import { ConnectInboxModal } from "@/components/ConnectInboxModal";
 
 const timezones = [
   { name: "UTC", value: "UTC" },
@@ -70,6 +71,9 @@ export const ProfileScreen = () => {
     description: "",
     timeZone: "",
   });
+
+  // Connect inbox modal state
+  const [showConnectInboxModal, setShowConnectInboxModal] = useState(false);
 
   // Refresh state
   const [refreshing, setRefreshing] = useState(false);
@@ -329,6 +333,17 @@ export const ProfileScreen = () => {
     }
   };
 
+  const handleConnectInbox = () => {
+    setShowConnectInboxModal(true);
+  };
+
+  const handleConnectInboxSuccess = () => {
+    setShowConnectInboxModal(false);
+    // Refresh profile to get updated data
+    dispatch(fetchMyProfileAsync());
+    Alert.alert("Success", "Your inbox has been connected successfully!");
+  };
+
   const styles = createStyles(colors);
 
   if (isLoading) {
@@ -512,8 +527,13 @@ export const ProfileScreen = () => {
             onPress={handleSettings}
           >
             <Text style={styles.actionButtonText}>Settings</Text>
+          </TouchableOpacity>{" "}
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleConnectInbox}
+          >
+            <Text style={styles.actionButtonText}>Connect Inbox</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutButtonText}>Logout</Text>
           </TouchableOpacity>
@@ -659,6 +679,14 @@ export const ProfileScreen = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Connect Inbox Modal */}
+      <ConnectInboxModal
+        visible={showConnectInboxModal}
+        onClose={() => setShowConnectInboxModal(false)}
+        onSuccess={handleConnectInboxSuccess}
+        updateOnboarding={false}
+      />
     </ScrollView>
   );
 };

@@ -111,7 +111,6 @@ export const ConnectInboxModal = ({
   };
 
   const handleClose = () => {
-    if (isConnecting) return;
     onClose();
   };
 

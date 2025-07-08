@@ -11,6 +11,7 @@ import {
   Dimensions,
   Image,
   Alert,
+  useWindowDimensions,
 } from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -85,6 +86,7 @@ export const EmailsScreen = () => {
   const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<any>();
+  const { width } = useWindowDimensions();
 
   const { emails, isLoading: emailsLoading } = useSelector(
     (state: RootState) => state.emails
@@ -344,6 +346,7 @@ export const EmailsScreen = () => {
           relatedEmail.from.meta?.email ||
           "Unknown",
         isFromEmail: true,
+        previewText: relatedEmail?.previewText,
       };
     }
 
@@ -355,11 +358,13 @@ export const EmailsScreen = () => {
         return {
           name: emailMatch[1].trim(),
           isFromEmail: true,
+          previewText: "-",
         };
       }
       return {
-        name: "Email Contact",
+        name: "-",
         isFromEmail: true,
+        previewText: "-",
       };
     }
 
@@ -421,114 +426,6 @@ export const EmailsScreen = () => {
   const handleFilterSelect = (filter: UserTaskFilter) => {
     setActiveFilter(filter);
     closeSidebar();
-  };
-
-  const getStatusStyle = (status: UserTaskStatus) => {
-    switch (status) {
-      case UserTaskStatus.PENDING:
-        return styles.statusPENDING;
-      case UserTaskStatus.FAILED:
-        return styles.statusFAILED;
-      case UserTaskStatus.COMPLETED:
-        return styles.statusCOMPLETED;
-      case UserTaskStatus.COMPLETED_EXTERNAL:
-        return styles.statusCOMPLETED_EXTERNAL;
-      case UserTaskStatus.IGNORED:
-        return styles.statusIGNORED;
-      case UserTaskStatus.SNOOZE:
-        return styles.statusSNOOZE;
-      case UserTaskStatus.DELETED:
-        return styles.statusDELETED;
-      default:
-        return styles.statusBadge;
-    }
-  };
-
-  const getSpaceNameById = (contextViewId: string | undefined) => {
-    if (!contextViewId) return "Unknown";
-    const contextView = contextViews.find((cv) => cv.id === contextViewId);
-    return contextView?.name || "Unknown";
-  };
-
-  // Color utility functions for readability
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
-        }
-      : null;
-  };
-
-  const getLuminance = (r: number, g: number, b: number) => {
-    const [rs, gs, bs] = [r, g, b].map((c) => {
-      c = c / 255;
-      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-  };
-
-  const getContrastRatio = (color1: string, color2: string) => {
-    const rgb1 = hexToRgb(color1);
-    const rgb2 = hexToRgb(color2);
-    if (!rgb1 || !rgb2) return 1;
-
-    const lum1 = getLuminance(rgb1.r, rgb1.g, rgb1.b);
-    const lum2 = getLuminance(rgb2.r, rgb2.g, rgb2.b);
-
-    return (Math.max(lum1, lum2) + 0.05) / (Math.min(lum1, lum2) + 0.05);
-  };
-
-  const adjustColorForReadability = (color: string, isDarkMode: boolean) => {
-    const backgroundColor = isDarkMode ? colors.background : colors.surface;
-    const contrastRatio = getContrastRatio(color, backgroundColor);
-
-    // WCAG AA requires 4.5:1 contrast ratio for normal text
-    if (contrastRatio >= 4.5) {
-      return color;
-    }
-
-    const rgb = hexToRgb(color);
-    if (!rgb) return colors.textSecondary;
-
-    // If contrast is too low, adjust the color
-    if (isDarkMode) {
-      // In dark mode, lighten the color
-      const factor = Math.min(2, 4.5 / contrastRatio);
-      return `rgb(${Math.min(255, Math.round(rgb.r * factor))}, ${Math.min(
-        255,
-        Math.round(rgb.g * factor)
-      )}, ${Math.min(255, Math.round(rgb.b * factor))})`;
-    } else {
-      // In light mode, darken the color
-      const factor = Math.max(0.3, 1 / (4.5 / contrastRatio));
-      return `rgb(${Math.round(rgb.r * factor)}, ${Math.round(
-        rgb.g * factor
-      )}, ${Math.round(rgb.b * factor)})`;
-    }
-  };
-
-  const getSpaceColorById = (contextViewId: string | undefined) => {
-    if (!contextViewId) return colors.textSecondary;
-    const contextView = contextViews.find((cv) => cv.id === contextViewId);
-    if (!contextView?.color) return colors.textSecondary;
-
-    // Check if we're in dark mode (assuming dark mode has a dark background)
-    const isDarkMode =
-      colors.background === "#000000" ||
-      colors.background === "#121212" ||
-      colors.background.includes("1") ||
-      colors.background.includes("2");
-
-    return adjustColorForReadability(contextView.color, isDarkMode);
-  };
-
-  const getOriginalSpaceColorById = (contextViewId: string | undefined) => {
-    if (!contextViewId) return colors.textSecondary;
-    const contextView = contextViews.find((cv) => cv.id === contextViewId);
-    return contextView?.color || colors.textSecondary;
   };
 
   const formatTimestamp = (dateInput: string | Date) => {
@@ -633,160 +530,45 @@ export const EmailsScreen = () => {
             </Text>
 
             {/* Description and Action Tags Row */}
-            <View style={styles.descriptionRow}>
-              {item.title && (
-                <Text style={styles.preview} numberOfLines={1}>
-                  {item.description}
-                </Text>
-              )}
-              <View style={styles.actionChipsContainer}>
-                {getTaskActions(item).map((action, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.actionChip,
-                      {
-                        backgroundColor: colors.primary + "15",
-                        borderColor: colors.primary + "40",
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.actionChipText, { color: colors.primary }]}
-                    >
-                      {action}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderEmail = ({ item }: { item: EmailWithoutContent }) => (
-    <TouchableOpacity
-      style={[
-        styles.emailItem,
-        !item.status?.internalRead && styles.unreadEmail,
-      ]}
-      onPress={() => handleEmailPress(item)}
-    >
-      <View style={styles.gmailLayout}>
-        {/* Avatar Column */}
-        <View style={styles.avatarColumn}>
-          <CustomAvatar
-            src={item.from.meta?.avatar}
-            alt={item.from.meta?.name || item.from.meta?.email || "Unknown"}
-            size={40}
-          />
-        </View>
-
-        {/* Content Column */}
-        <View style={styles.contentColumn}>
-          {/* Name and Date Row */}
-          <View style={styles.nameRow}>
-            <Text
+            <View
               style={[
-                styles.sender,
-                !item.status?.internalRead && styles.unreadText,
+                styles.descriptionRow,
+                { maxWidth: width, overflow: "hidden" },
               ]}
             >
-              {item.from.meta?.name || item.from.meta?.email || "Unknown"}
-            </Text>
-            <View style={styles.rightSection}>
-              <Text style={styles.timestamp}>{formatTimestamp(item.sent)}</Text>
-              <TouchableOpacity onPress={() => {}}>
-                <MaterialIcons
-                  name={
-                    item.externalLabels.includes(EmailLabel.STARRED)
-                      ? "star"
-                      : "star-border"
-                  }
-                  size={16}
-                  color={
-                    item.externalLabels.includes(EmailLabel.STARRED)
-                      ? "#FFD700"
-                      : "#CCCCCC"
-                  }
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Title */}
-          <Text
-            style={[
-              styles.subject,
-              !item.status?.internalRead && styles.unreadText,
-            ]}
-          >
-            {item.subject}
-          </Text>
-
-          {/* Description Row */}
-          <View style={styles.descriptionRow}>
-            <Text style={styles.preview} numberOfLines={1}>
-              {item.previewText || "No preview available"}
-            </Text>
-          </View>
-        </View>
-      </View>
-      {!item.status?.internalRead && <View style={styles.unreadIndicator} />}
-    </TouchableOpacity>
-  );
-
-  const renderDraft = ({ item }: { item: any }) => {
-    const emailData = parseEmailDraftFromToolExecution(item);
-    if (!emailData) return null;
-
-    return (
-      <TouchableOpacity
-        style={[styles.emailItem, styles.draftItem]}
-        onPress={() => handleDraftPress(item.id)}
-      >
-        <View style={styles.gmailLayout}>
-          {/* Avatar Column */}
-          <View style={styles.avatarColumn}>
-            <CustomAvatar alt="Draft" size={40} />
-          </View>
-
-          {/* Content Column */}
-          <View style={styles.contentColumn}>
-            {/* Name and Date Row */}
-            <View style={styles.nameRow}>
-              <Text style={styles.sender}>
-                Draft to:{" "}
-                {Array.isArray(emailData.to)
-                  ? emailData.to.join(", ")
-                  : "Unknown"}
-              </Text>
-              <View style={styles.rightSection}>
-                <Text style={styles.timestamp}>
-                  {formatTimestamp(item.updatedAt)}
+              {item.title && (
+                <Text
+                  style={[styles.preview, styles.descriptionText]}
+                  numberOfLines={1}
+                >
+                  {senderInfo.previewText}
                 </Text>
-                <MaterialIcons
-                  name="edit"
-                  size={16}
-                  color={colors.textSecondary}
-                />
-              </View>
-            </View>
-
-            {/* Title */}
-            <Text style={styles.subject}>
-              {emailData.subject || "No subject"}
-            </Text>
-
-            {/* Description Row */}
-            <View style={styles.descriptionRow}>
-              <Text style={styles.preview} numberOfLines={1}>
-                {emailData.body
-                  ? emailData.body.substring(0, 100) + "..."
-                  : "No content"}
-              </Text>
+              )}
+              {getTaskActions(item).length > 0 && (
+                <View style={styles.actionChipsContainer}>
+                  {getTaskActions(item).map((action, index) => (
+                    <View
+                      key={index}
+                      style={[
+                        styles.actionChip,
+                        {
+                          backgroundColor: colors.primary + "15",
+                          borderColor: colors.primary + "40",
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.actionChipText,
+                          { color: colors.primary },
+                        ]}
+                      >
+                        {action}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -1171,9 +953,13 @@ const createStyles = (colors: any) =>
     },
     descriptionRow: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
       marginTop: 2,
+      flex: 1,
+    },
+    descriptionText: {
+      flex: 1,
+      marginRight: 8,
     },
     emailInfo: {
       flex: 1,
@@ -1237,6 +1023,7 @@ const createStyles = (colors: any) =>
       marginBottom: 4,
     },
     preview: {
+      flex: 1,
       fontSize: 13,
       color: colors.textSecondary,
       lineHeight: 18,
@@ -1444,8 +1231,10 @@ const createStyles = (colors: any) =>
     },
     actionChipsContainer: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 3,
+      flexWrap: "nowrap",
+      flexShrink: 0,
+      alignItems: "center",
+      marginLeft: "auto",
     },
     actionChip: {
       paddingHorizontal: 6,

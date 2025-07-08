@@ -156,22 +156,6 @@ export const SettingsScreen = () => {
     };
   };
 
-  const handleSaveSettings = async () => {
-    if (!currentProfile) return;
-
-    const updateData: UpdateMyProfileRequest = {
-      timeZone: timeZone || undefined,
-      emailPreferences: emailPreferences,
-    };
-
-    try {
-      await dispatch(updateMyProfileAsync(updateData)).unwrap();
-      Alert.alert("Success", "Settings updated successfully!");
-    } catch (error) {
-      Alert.alert("Error", "Failed to update settings. Please try again.");
-    }
-  };
-
   const handleOpenPrivacyPolicy = () => {
     const url = "https://app.dearflow.ai/legal/privacy-policy";
     Linking.openURL(url).catch(() => {
