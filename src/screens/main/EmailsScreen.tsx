@@ -1059,7 +1059,7 @@ export const EmailsScreen = () => {
         activeOpacity={0.7}
       >
         <MaterialIcons name="add" size={20} color="#FFFFFF" />
-        <Text style={styles.fabText}>New Task</Text>
+        <Text style={styles.fabText}>Compose</Text>
       </TouchableOpacity>
     </View>
   );
