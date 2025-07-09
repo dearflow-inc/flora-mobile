@@ -10,7 +10,10 @@ import {
 } from "react-native";
 import * as Device from "expo-device";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { updateMyProfileAsync } from "@/store/slices/profileSlice";
+import {
+  fetchUserInfoAsync,
+  updateMyProfileAsync,
+} from "@/store/slices/profileSlice";
 import GmailIcon from "@/../assets/tools/GoogleMail.svg";
 import OutlookIcon from "@/../assets/tools/Outlook.svg";
 import { initiateOAuth, handleOAuthCallback } from "@/utils/oauth";
@@ -64,6 +67,7 @@ export const ConnectInboxModal = ({
           if (result.success) {
             // Update onboarding step if requested
             if (updateOnboarding) {
+              dispatch(fetchUserInfoAsync()).unwrap();
               await dispatch(updateMyProfileAsync({ onboarding: 1 })).unwrap();
             }
 

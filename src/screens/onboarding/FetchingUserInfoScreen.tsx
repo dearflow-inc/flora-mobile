@@ -15,7 +15,6 @@ import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { fetchChatAsync } from "@/store/slices/chatSlice";
 import { OnboardingStackParamList } from "@/types/navigation";
 import { useTheme } from "@/hooks/useTheme";
-import { fetchUserInfoAsync } from "@/store/slices/profileSlice";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 
@@ -59,14 +58,6 @@ export const FetchingUserInfoScreen = () => {
       handleStartPolling();
     }
   }, [currentProfile?.id]);
-
-  useEffect(() => {
-    if (currentProfile?.onboarding === 0) {
-      try {
-        dispatch(fetchUserInfoAsync()).unwrap();
-      } catch (err) {}
-    }
-  }, [currentProfile?.onboarding]);
 
   useEffect(() => {
     // Clean up polling when component unmounts
