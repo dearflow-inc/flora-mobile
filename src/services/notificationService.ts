@@ -4,16 +4,72 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { secureStorage } from "./secureStorage";
 import { API_CONFIG } from "@/config/api";
+import { ChatScreen } from "@/screens/main/ChatScreen";
 
-// Configure notification behavior
+// Define notification types for conditional display
+export enum SendMobileNotificationAction {
+  USER_TASK_CREATED = "user_task_created",
+  LOST_TOOL_ACCESS = "lost_tool_access",
+  CHAT_MESSAGE_CREATED = "chat_message_created",
+}
+
+// Define which screens should show which notification types
+const NOTIFICATION_EXCLUSION = {
+  Chat: [SendMobileNotificationAction.CHAT_MESSAGE_CREATED],
+};
+
+// Global variable to store current navigation state
+let currentNavigationState: {
+  currentScreen?: "Chat";
+  currentTab?: string;
+} = {};
+
+// Function to update current navigation state
+export const updateNavigationState = (screen?: "Chat", tab?: string) => {
+  currentNavigationState = {
+    currentScreen: screen,
+    currentTab: tab,
+  };
+};
+
+// Function to check if notification should be shown based on current screen
+const shouldShowNotification = (
+  notificationType: SendMobileNotificationAction
+): boolean => {
+  const { currentScreen, currentTab } = currentNavigationState;
+
+  if (!notificationType) {
+    return false;
+  }
+
+  if (
+    currentScreen &&
+    NOTIFICATION_EXCLUSION[currentScreen]?.includes(notificationType)
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
+// Configure notification behavior with conditional display
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notification) => {
+    // Extract notification type from data
+    const notificationType = notification.request.content.data
+      ?.action as SendMobileNotificationAction;
+
+    // Check if we should show this notification based on current screen
+    const shouldShow = shouldShowNotification(notificationType);
+
+    return {
+      shouldShowAlert: shouldShow,
+      shouldPlaySound: shouldShow,
+      shouldSetBadge: true, // Always set badge regardless of screen
+      shouldShowBanner: shouldShow,
+      shouldShowList: true, // Always add to notification list
+    };
+  },
 });
 
 export interface DeviceInfo {
@@ -27,6 +83,12 @@ class NotificationService {
   private baseURL = `${API_CONFIG.API_BASE_URL}/profiles`;
   private tokenListener: Notifications.Subscription | null = null;
   private responseListener: Notifications.Subscription | null = null;
+  private navigation: any; // Store navigation reference
+
+  // Method to set navigation reference
+  setNavigation(navigation: any) {
+    this.navigation = navigation;
+  }
 
   private async getAuthHeaders() {
     const authToken = await secureStorage.getItem("auth_token");
@@ -261,11 +323,40 @@ class NotificationService {
           console.log("Notification response received:", response);
 
           // Handle different notification types
-          const notificationData = response.notification.request.content.data;
+          const rawData = response.notification.request.content.data;
+          const notificationType =
+            rawData?.action as SendMobileNotificationAction;
 
-          if (notificationData?.type === "todo_reminder") {
-            // Navigate to todo detail screen
-            // This will be handled by your navigation system
+          const data: {
+            userTaskId?: string;
+            chatMessageId?: string;
+            toolId?: string;
+          } = rawData.data as any;
+
+          switch (notificationType) {
+            case SendMobileNotificationAction.USER_TASK_CREATED:
+              if (this.navigation) {
+                this.navigation.navigate("UserTaskDetail", {
+                  userTaskId: data.userTaskId,
+                });
+              }
+              break;
+
+            case SendMobileNotificationAction.CHAT_MESSAGE_CREATED:
+              if (this.navigation) {
+                this.navigation.navigate("Chat", {
+                  chatMessageId: data.chatMessageId,
+                });
+              }
+              break;
+
+            case SendMobileNotificationAction.LOST_TOOL_ACCESS:
+              if (this.navigation) {
+                this.navigation.navigate("Profile", {
+                  screen: "Integrations",
+                });
+              }
+              break;
           }
         }
       );

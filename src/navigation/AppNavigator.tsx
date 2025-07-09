@@ -18,11 +18,13 @@ import { AuthNavigator } from "./AuthNavigator";
 import { OnboardingNavigator } from "./OnboardingNavigator";
 import { AppStackNavigator } from "./AppStackNavigator";
 import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
+import { useNavigation } from "@react-navigation/native";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator = () => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation();
   const { isAuthenticated, isLoading, user } = useAppSelector(
     (state) => state.auth
   );
@@ -200,6 +202,9 @@ export const AppNavigator = () => {
     if (isFullyAuthenticated) {
       console.log("Setting up notification listeners");
 
+      // Set navigation reference for notification service
+      notificationService.setNavigation(navigation);
+
       // Add push token listener
       const tokenListener = notificationService.addPushTokenListener();
 
@@ -226,7 +231,7 @@ export const AppNavigator = () => {
         notificationService.removeAllListeners();
       };
     }
-  }, [isFullyAuthenticated]);
+  }, [isFullyAuthenticated, navigation]);
 
   // Show loading screen while initializing or when auth is loading
   // Also show loading when user is authenticated+verified but profile is still loading

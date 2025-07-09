@@ -14,6 +14,7 @@ import { ContactSupportScreen } from "@/screens/main/ContactSupportScreen";
 import { ToolExecutionScreen } from "@/screens/main/ToolExecutionScreen";
 import { UserTaskScreen } from "@/screens/main/UserTaskScreen";
 import { useTheme } from "@/hooks/useTheme";
+import { NavigationListener } from "@/components/NavigationListener";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -26,6 +27,7 @@ const MainTabNavigator = () => {
       style={{ flex: 1, backgroundColor: colors.background }}
       edges={["top"]}
     >
+      <NavigationListener />
       <Tab.Navigator
         initialRouteName="Emails"
         screenOptions={({ route }) => ({
