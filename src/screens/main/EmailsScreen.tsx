@@ -23,7 +23,11 @@ import {
   selectEmailDrafts,
   createToolExecutionAsync,
 } from "@/store/slices/toolExecutionSlice";
-import { fetchMyEmailsAsync } from "@/store/slices/emailSlice";
+import {
+  fetchMyEmailsAsync,
+  fetchEmailsByIdsAsync,
+  fetchEmailsByThreadIdAsync,
+} from "@/store/slices/emailSlice";
 import {
   fetchUserTasksAsync,
   selectUserTasks,
@@ -110,6 +114,43 @@ export const EmailsScreen = () => {
     dispatch(fetchMyEmailsAsync()); // Still need emails for email context tasks
     dispatch(fetchMyScenarios());
   }, [dispatch]);
+
+  // Fetch missing emails by IDs when user tasks reference emails that aren't in the store
+  useEffect(() => {
+    const emailIdsToFetch = userTasks
+      .map((task) => {
+        const emailContext = task.context.find((ctx) => ctx.type === "email");
+        return emailContext?.emailId;
+      })
+      .filter(
+        (id): id is string => !!id && !emails.find((email) => email.id === id)
+      );
+
+    if (emailIdsToFetch.length > 0) {
+      dispatch(fetchEmailsByIdsAsync(emailIdsToFetch));
+    }
+  }, [userTasks, emails, dispatch]);
+
+  // Fetch emails by thread ID when we have emails with thread IDs that aren't fully loaded
+  useEffect(() => {
+    const threadIdsToFetch = emails
+      .filter((email) => email.threadId && email.threadId !== email.id)
+      .map((email) => email.threadId!)
+      .filter((threadId) => {
+        // Check if we already have emails from this thread
+        const threadEmails = emails.filter(
+          (email) => email.threadId === threadId
+        );
+        return threadEmails.length === 1; // Only fetch if we only have one email from the thread
+      });
+
+    if (threadIdsToFetch.length > 0) {
+      // Use the existing fetchEmailsByThreadIdAsync for each thread
+      threadIdsToFetch.forEach((threadId) => {
+        dispatch(fetchEmailsByThreadIdAsync(threadId));
+      });
+    }
+  }, [emails, dispatch]);
 
   const openSidebar = () => {
     setSidebarVisible(true);
@@ -358,7 +399,7 @@ export const EmailsScreen = () => {
         return {
           name: emailMatch[1].trim(),
           isFromEmail: true,
-          previewText: "-",
+          previewText: "",
         };
       }
       return {

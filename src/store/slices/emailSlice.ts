@@ -85,6 +85,18 @@ export const fetchEmailsByThreadIdAsync = createAsyncThunk<
   }
 });
 
+export const fetchEmailsByIdsAsync = createAsyncThunk<
+  Array<Email>,
+  Array<string>,
+  { rejectValue: string }
+>("emails/fetchEmailsByIds", async (emailIds, { rejectWithValue }) => {
+  try {
+    return await emailService.getEmailsByIds(emailIds);
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Failed to fetch emails by IDs");
+  }
+});
+
 export const updateEmailStatusAsync = createAsyncThunk<
   Email,
   { emailId: string; status: UpdateEmailStatusRequest },
@@ -372,6 +384,34 @@ export const emailSlice = createSlice({
       .addCase(fetchEmailsByThreadIdAsync.rejected, (state, action) => {
         state.isFetching = false;
         state.error = action.payload || "Failed to fetch emails by thread";
+      })
+      // Fetch Emails by IDs
+      .addCase(fetchEmailsByIdsAsync.pending, (state) => {
+        state.isFetching = true;
+        state.error = null;
+      })
+      .addCase(fetchEmailsByIdsAsync.fulfilled, (state, action) => {
+        state.isFetching = false;
+        // Merge fetched emails into the emails list, avoiding duplicates
+        action.payload.forEach((email) => {
+          const { message, ...emailWithoutContent } = email;
+          const existingIndex = state.emails.findIndex(
+            (e) => e.id === email.id
+          );
+          if (existingIndex !== -1) {
+            // Update existing email
+            state.emails[existingIndex] =
+              emailWithoutContent as EmailWithoutContent;
+          } else {
+            // Add new email
+            state.emails.push(emailWithoutContent as EmailWithoutContent);
+          }
+        });
+        state.error = null;
+      })
+      .addCase(fetchEmailsByIdsAsync.rejected, (state, action) => {
+        state.isFetching = false;
+        state.error = action.payload || "Failed to fetch emails by IDs";
       })
       // Update Email Status
       .addCase(updateEmailStatusAsync.pending, (state) => {

@@ -100,6 +100,22 @@ class EmailService {
     }
   }
 
+  // GET /emails - Get emails by IDs
+  async getEmailsByIds(emailIds: Array<string>): Promise<Array<Email>> {
+    try {
+      const response = await this.api.get<EmailResponse>("/emails", {
+        params: {
+          emailIds: emailIds.join(","),
+        },
+      });
+      return response.data.emails;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch emails by IDs"
+      );
+    }
+  }
+
   // POST /emails/:emailId/status - Update email status
   async updateEmailStatus(
     emailId: string,
