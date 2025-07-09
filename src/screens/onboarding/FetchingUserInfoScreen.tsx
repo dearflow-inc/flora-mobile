@@ -61,8 +61,7 @@ export const FetchingUserInfoScreen = () => {
   }, [currentProfile?.id]);
 
   useEffect(() => {
-    // Start polling when screen loads and profile is available
-    if (currentProfile?.onboarding === 1) {
+    if (currentProfile?.onboarding === 0) {
       try {
         dispatch(fetchUserInfoAsync()).unwrap();
       } catch (err) {}
