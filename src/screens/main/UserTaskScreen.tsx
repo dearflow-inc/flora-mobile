@@ -25,6 +25,7 @@ import {
   updateUserTaskActionDataAsync,
   setSelectedUserTask,
   rateUserTaskAsync,
+  createUserTaskAsync,
 } from "@/store/slices/userTaskSlice";
 import {
   fetchEmailsByThreadIdAsync,
@@ -37,6 +38,7 @@ import {
   UserTaskAction,
   SystemReference,
   UserTaskTypeData,
+  CreateUserTaskRequest,
 } from "@/types/userTask";
 import { Email } from "@/types/email";
 import { AppStackParamList } from "@/types/navigation";
@@ -63,12 +65,14 @@ export const UserTaskScreen = () => {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSuggestionsExpanded, setIsSuggestionsExpanded] = useState(false);
+  const [isMenuModalVisible, setIsMenuModalVisible] = useState(false);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [contextData, setContextData] = useState<{
     emails?: Email[];
     videos?: any[];
   }>({});
 
-  const { isLoading, error } = useSelector(
+  const { isLoading, error, isCreating } = useSelector(
     (state: RootState) => state.userTasks
   );
   const userTasks = useSelector(selectUserTasks);
@@ -184,8 +188,75 @@ export const UserTaskScreen = () => {
   };
 
   const handleMenu = () => {
-    // TODO: Implement menu functionality
-    console.log("Menu button pressed");
+    setIsMenuModalVisible(true);
+  };
+
+  const handleCreateTodo = async () => {
+    if (!userTask || !contextData.emails || contextData.emails.length === 0)
+      return;
+
+    setIsMenuModalVisible(false);
+    setIsCreatingTask(true);
+    setIsSuggestionsExpanded(true); // Expand suggestions immediately
+
+    try {
+      const firstEmail = contextData.emails[0];
+      const createRequest: CreateUserTaskRequest = {
+        type: UserTaskType.CREATE_TODO,
+        targetView: userTask.contextViewId,
+        actionConfig: {
+          emailId: firstEmail.id,
+        },
+        insertIntoUserTaskId: userTask.id,
+        manual: false,
+      };
+
+      await dispatch(createUserTaskAsync(createRequest)).unwrap();
+
+      // Refresh the current task to get the new action
+      // Since we don't have fetchUserTaskByIdAsync, we'll just reload context
+      await loadContextData();
+    } catch (error) {
+      Alert.alert("Error", "Failed to create todo task. Please try again.");
+    } finally {
+      setIsCreatingTask(false);
+    }
+  };
+
+  const handleCreateReply = async () => {
+    if (!userTask || !contextData.emails || contextData.emails.length === 0)
+      return;
+
+    setIsMenuModalVisible(false);
+    setIsCreatingTask(true);
+    setIsSuggestionsExpanded(true); // Expand suggestions immediately
+
+    try {
+      const firstEmail = contextData.emails[0];
+      const createRequest: CreateUserTaskRequest = {
+        type: UserTaskType.EMAIL_REPLY,
+        targetView: userTask.contextViewId,
+        actionConfig: {
+          emailId: firstEmail.id,
+        },
+        insertIntoUserTaskId: userTask.id,
+        manual: false,
+      };
+
+      await dispatch(createUserTaskAsync(createRequest)).unwrap();
+
+      // Refresh the current task to get the new action
+      // Since we don't have fetchUserTaskByIdAsync, we'll just reload context
+      await loadContextData();
+    } catch (error) {
+      Alert.alert("Error", "Failed to create reply task. Please try again.");
+    } finally {
+      setIsCreatingTask(false);
+    }
+  };
+
+  const handleCloseMenuModal = () => {
+    setIsMenuModalVisible(false);
   };
 
   const handleBack = () => {
@@ -325,6 +396,10 @@ export const UserTaskScreen = () => {
 
   // Helper function to generate suggestion text based on action types
   const getSuggestionText = () => {
+    if (isCreatingTask) {
+      return "Flora is preparing suggestions...";
+    }
+
     if (!userTask?.actions || pendingActions?.length === 0) {
       return "Flora has no suggestions";
     }
@@ -343,6 +418,67 @@ export const UserTaskScreen = () => {
     return `Flora prepared a ${actionDescriptions
       .map((action) => action.toLowerCase())
       .join(", ")}`;
+  };
+
+  const renderMenuModal = () => {
+    const hasEmailContext = contextData.emails && contextData.emails.length > 0;
+
+    return (
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          onPress={handleCloseMenuModal}
+          activeOpacity={1}
+        />
+        <View style={styles.menuModal}>
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              !hasEmailContext && styles.menuItemDisabled,
+            ]}
+            onPress={handleCreateTodo}
+            disabled={!hasEmailContext}
+          >
+            <MaterialIcons
+              name="check-box"
+              size={20}
+              color={hasEmailContext ? colors.text : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.menuItemText,
+                !hasEmailContext && styles.menuItemTextDisabled,
+              ]}
+            >
+              Create Todo
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.menuSeparator} />
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              !hasEmailContext && styles.menuItemDisabled,
+            ]}
+            onPress={handleCreateReply}
+            disabled={!hasEmailContext}
+          >
+            <MaterialIcons
+              name="reply"
+              size={20}
+              color={hasEmailContext ? colors.text : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.menuItemText,
+                !hasEmailContext && styles.menuItemTextDisabled,
+              ]}
+            >
+              Create Reply
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
   if (isLoading && !userTask) {
@@ -457,13 +593,15 @@ export const UserTaskScreen = () => {
           ]}
         >
           {/* Show suggestion text only if there are actions */}
-          {pendingActions && pendingActions?.length > 0 && (
-            <View>
-              <TouchableOpacity
-                style={styles.suggestionContainer}
-                onPress={handleToggleSuggestions}
-              >
-                <Text style={styles.suggestionText}>{getSuggestionText()}</Text>
+          <View>
+            <TouchableOpacity
+              style={styles.suggestionContainer}
+              onPress={handleToggleSuggestions}
+            >
+              <Text style={styles.suggestionText}>{getSuggestionText()}</Text>
+              {isCreatingTask ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
                 <MaterialIcons
                   name={
                     isSuggestionsExpanded
@@ -473,17 +611,26 @@ export const UserTaskScreen = () => {
                   size={24}
                   color={colors.textSecondary}
                 />
-              </TouchableOpacity>
-              {isSuggestionsExpanded && (
-                <ScrollView
-                  style={[
-                    styles.expandedActionsContainer,
-                    { maxHeight: height - 330 },
-                  ]}
-                  showsVerticalScrollIndicator={false}
-                  nestedScrollEnabled={true}
-                >
-                  {pendingActions?.map((action, index) => (
+              )}
+            </TouchableOpacity>
+            {isSuggestionsExpanded && (
+              <ScrollView
+                style={[
+                  styles.expandedActionsContainer,
+                  { maxHeight: height - 330 },
+                ]}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled={true}
+              >
+                {pendingActions
+                  ?.sort((a, b) =>
+                    a.type === UserTaskType.EMAIL_CLEAN_UP
+                      ? 1
+                      : b.type === UserTaskType.EMAIL_CLEAN_UP
+                      ? -1
+                      : 0
+                  )
+                  .map((action, index) => (
                     <TaskActionComponent
                       key={action.id}
                       action={action}
@@ -499,10 +646,9 @@ export const UserTaskScreen = () => {
                       }}
                     />
                   ))}
-                </ScrollView>
-              )}
-            </View>
-          )}
+              </ScrollView>
+            )}
+          </View>
           <View style={styles.buttonsContainer}>
             <TouchableOpacity
               style={[styles.actionButton, styles.ignoreButton]}
@@ -523,6 +669,7 @@ export const UserTaskScreen = () => {
           </View>
         </View>
       )}
+      {isMenuModalVisible && renderMenuModal()}
     </SafeAreaView>
   );
 };
@@ -705,5 +852,59 @@ const createStyles = (colors: any) =>
       display: "flex",
       flexDirection: "column",
       justifyContent: "space-between",
+    },
+    modalOverlay: {
+      position: "absolute",
+      top: 60,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "flex-start",
+      alignItems: "flex-end",
+      backgroundColor: "rgba(0,0,0,0.5)",
+      zIndex: 1000,
+    },
+    modalBackdrop: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    menuModal: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 8,
+      marginTop: 60, // Position below the header
+      marginRight: 16,
+      minWidth: 160,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    menuItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+    },
+    menuItemText: {
+      marginLeft: 12,
+      fontSize: 16,
+      color: colors.text,
+    },
+    menuSeparator: {
+      height: 1,
+      backgroundColor: colors.borderLight,
+      marginVertical: 8,
+    },
+    menuItemDisabled: {
+      opacity: 0.6,
+    },
+    menuItemTextDisabled: {
+      color: colors.textSecondary,
     },
   });

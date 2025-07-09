@@ -9,6 +9,7 @@ import {
   UserTaskStatus,
 } from "@/types/userTask";
 import { CreateTodoAction } from "./CreateTodoAction";
+import { EmailCleanUpAction } from "./EmailCleanUpAction";
 
 interface TaskActionComponentProps {
   action: UserTaskAction;
@@ -38,6 +39,8 @@ export const TaskActionComponent: React.FC<TaskActionComponentProps> = ({
     switch (action.type) {
       case UserTaskType.CREATE_TODO:
         return <CreateTodoAction action={action} userTask={userTask} />;
+      case UserTaskType.EMAIL_CLEAN_UP:
+        return <EmailCleanUpAction action={action} userTask={userTask} />;
       default:
         return null;
     }

@@ -221,6 +221,9 @@ const userTaskSlice = createSlice({
       })
       .addCase(createUserTaskAsync.fulfilled, (state, action) => {
         state.isCreating = false;
+        state.userTasks = state.userTasks.filter(
+          (task) => task.id !== action.payload.id
+        );
         state.userTasks.unshift(action.payload);
         state.error = null;
       })
@@ -411,15 +414,21 @@ const userTaskSlice = createSlice({
       })
       .addCase(deleteUserTaskActionAsync.fulfilled, (state, action) => {
         state.isUpdating = false;
+
+        const { userTaskId, actionId } = action.meta?.arg as any;
+
         const index = state.userTasks.findIndex(
-          (task) => task.id === action.payload.id
+          (task) => task?.id === userTaskId
         );
         if (index !== -1) {
-          state.userTasks[index] = action.payload;
+          const actionIndex = state.userTasks[index].actions.findIndex(
+            (action) => action.id === actionId
+          );
+          if (actionIndex !== -1) {
+            state.userTasks[index].actions.splice(actionIndex, 1);
+          }
         }
-        if (state.selectedUserTask?.id === action.payload.id) {
-          state.selectedUserTask = action.payload;
-        }
+
         state.error = null;
       })
       .addCase(deleteUserTaskActionAsync.rejected, (state, action) => {

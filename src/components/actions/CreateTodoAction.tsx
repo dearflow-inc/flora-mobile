@@ -91,11 +91,35 @@ export const CreateTodoAction: React.FC<CreateTodoActionProps> = ({
   };
 
   const handleDelete = () => {
-    dispatch(
-      deleteUserTaskActionAsync({
-        userTaskId: userTask.id,
-        actionId: action.id,
-      })
+    Alert.alert(
+      "Remove Action",
+      "Are you sure you want to remove this todo action?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await dispatch(
+                deleteUserTaskActionAsync({
+                  userTaskId: userTask.id,
+                  actionId: action.id,
+                })
+              ).unwrap();
+              // Success - the action will be removed from the UI automatically
+              // when the Redux store updates
+            } catch (error) {
+              console.log(error);
+              Alert.alert(
+                "Error",
+                "Failed to remove action. Please try again.",
+                [{ text: "OK" }]
+              );
+            }
+          },
+        },
+      ]
     );
   };
 

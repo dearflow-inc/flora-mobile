@@ -527,7 +527,7 @@ export const ProfileScreen = () => {
             onPress={handleSettings}
           >
             <Text style={styles.actionButtonText}>Settings</Text>
-          </TouchableOpacity>{" "}
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleConnectInbox}

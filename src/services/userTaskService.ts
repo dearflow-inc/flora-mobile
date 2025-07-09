@@ -305,9 +305,9 @@ class UserTaskService {
   async deleteUserTaskAction(
     userTaskId: string,
     actionId: string
-  ): Promise<UserTaskResponse> {
+  ): Promise<{ userTask: UserTaskResponse }> {
     try {
-      const response = await this.api.post<UserTaskResponse>(
+      const response = await this.api.post<{ userTask: UserTaskResponse }>(
         `/user-tasks/${userTaskId}/actions/${actionId}/delete`
       );
       return response.data;

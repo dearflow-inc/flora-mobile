@@ -1,0 +1,18 @@
+# Expo Push Notifications Configuration
+# Copy this file to .env and fill in your values
+
+# Your Expo Access Token (get from https://expo.dev/settings/access-tokens)
+EXPO_ACCESS_TOKEN=your_expo_access_token_here
+
+# Expo Push API URL (usually this default value)
+EXPO_PUSH_API_URL=https://exp.host/--/api/v2/push/send
+
+# Your EAS Project ID (from app.config.js)
+EAS_PROJECT_ID=122b3dc0-2f1d-4851-acc7-9beed4d4a0a5
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# JWT Secret (for your auth token verification)
+JWT_SECRET=your_jwt_secret_here 
