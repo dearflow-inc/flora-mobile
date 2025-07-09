@@ -181,6 +181,20 @@ const userTaskSlice = createSlice({
     setSelectedUserTask: (state, action: PayloadAction<UserTask>) => {
       state.selectedUserTask = action.payload;
     },
+    updateUserTaskFromWebSocket: (state, action: PayloadAction<UserTask>) => {
+      const updatedUserTask = action.payload;
+      const index = state.userTasks.findIndex(
+        (task) => task.id === updatedUserTask.id
+      );
+      if (index !== -1) {
+        state.userTasks[index] = updatedUserTask;
+      } else {
+        state.userTasks.unshift(updatedUserTask);
+      }
+      if (state.selectedUserTask?.id === updatedUserTask.id) {
+        state.selectedUserTask = updatedUserTask;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -443,6 +457,7 @@ export const {
   clearUserTaskError,
   clearSelectedUserTask,
   setSelectedUserTask,
+  updateUserTaskFromWebSocket,
 } = userTaskSlice.actions;
 
 // Selectors

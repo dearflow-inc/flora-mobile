@@ -82,9 +82,7 @@ export default {
         : "local",
       GOOGLE_CLIENT_ID: IS_PRODUCTION
         ? "539143776368-bv2q2a6ofipj58l4sb47muglr6gi3mp4.apps.googleusercontent.com"
-        : IS_PREVIEW
-        ? "903375841365-dte3punlg82gaj90mjjhpegfo3fve82h.apps.googleusercontent.com"
-        : "539143776368-bv2q2a6ofipj58l4sb47muglr6gi3mp4.apps.googleusercontent.com",
+        : "903375841365-dte3punlg82gaj90mjjhpegfo3fve82h.apps.googleusercontent.com",
       AZURE_CLIENT_ID: "b810117e-53b7-4b7e-a27a-c7e1e77a3a37",
       AZURE_TENANT_ID: "87017db8-66f4-4375-96c9-dd30790663b8",
       // Environment-specific configurations

@@ -21,10 +21,11 @@ import {
 import { updateTodoFromWebSocket } from "@/store/slices/todoSlice";
 import { updateEmailFromWebSocket } from "@/store/slices/emailSlice";
 import { updateToolExecutionFromWebSocket } from "@/store/slices/toolExecutionSlice";
+import { updateUserTaskFromWebSocket } from "@/store/slices/userTaskSlice";
 import { Todo } from "@/types/todo";
 import { Email } from "@/types/email";
 import { ToolExecution } from "@/types/toolExecution";
-import { secureStorage } from "@/services/secureStorage";
+import { UserTask } from "@/types/userTask";
 
 interface SocketEvent {
   event: string;
@@ -37,6 +38,7 @@ enum SocketEvents {
   TODO = "todo",
   EMAIL = "email",
   TOOL_EXECUTION = "tool_execution",
+  USER_TASK = "user_task",
 }
 
 interface WebSocketState {
@@ -205,6 +207,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         case SocketEvents.TOOL_EXECUTION:
           const toolExecution: ToolExecution = socketEvent.data.toolExecution;
           dispatch(updateToolExecutionFromWebSocket(toolExecution));
+          break;
+
+        case SocketEvents.USER_TASK:
+          const userTask: UserTask = socketEvent.data.userTask;
+          dispatch(updateUserTaskFromWebSocket(userTask));
           break;
 
         default:

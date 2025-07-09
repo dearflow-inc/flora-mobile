@@ -110,7 +110,6 @@ export const CreateTodoAction: React.FC<CreateTodoActionProps> = ({
               // Success - the action will be removed from the UI automatically
               // when the Redux store updates
             } catch (error) {
-              console.log(error);
               Alert.alert(
                 "Error",
                 "Failed to remove action. Please try again.",

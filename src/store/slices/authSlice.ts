@@ -15,6 +15,7 @@ import { toolExecutionService } from "@/services/toolExecutionService";
 import { userTaskService } from "@/services/userTaskService";
 import { scenariosService } from "@/services/scenariosService";
 import { secureStorage } from "@/services/secureStorage";
+import { clearAllProfileData } from "./profileSlice";
 
 const initialState: AuthState = {
   user: null,
@@ -67,13 +68,21 @@ export const signUpAsync = createAsyncThunk<
 
 export const signOutAsync = createAsyncThunk(
   "auth/signOut",
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
       await authService.signOut();
       await secureStorage.removeItem("auth_token");
       await secureStorage.removeItem("refresh_token");
       authService.removeAuthToken();
       todoService.removeAuthToken();
+      profileService.removeAuthToken();
+      emailService.removeAuthToken();
+      toolExecutionService.removeAuthToken();
+      userTaskService.removeAuthToken();
+      scenariosService.removeAuthToken();
+
+      // Clear profile data
+      dispatch(clearAllProfileData());
     } catch (error: any) {
       return rejectWithValue(error.message || "Sign out failed");
     }

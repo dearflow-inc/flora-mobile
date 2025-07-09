@@ -98,9 +98,14 @@ export const ChatView: React.FC<ChatViewProps> = ({
   }, [chatId, autoCreateChat]);
 
   useEffect(() => {
+    let timeout: NodeJS.Timeout;
     if (isChatClosed) {
-      onChatClosed?.();
+      timeout = setTimeout(() => {
+        onChatClosed?.();
+      }, 1000);
     }
+
+    return () => clearTimeout(timeout);
   }, [isChatClosed]);
 
   useEffect(() => {
@@ -145,8 +150,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
         await handleCreateNewChat();
       }
     } catch (error: any) {
-      console.error("Failed to initialize chat:", error);
-
       // Only create a new chat if it's a "no chat found" error
       if (
         error.message?.includes("404") ||

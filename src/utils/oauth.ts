@@ -40,7 +40,7 @@ export const getMobileGoogleUrl = (
   const uniqueScopes = [...new Set(newScope)];
 
   const redirectUrl = `${OAUTH_CONFIG.DEEP_LINK_SCHEME}/oauth/callback`;
-  console.log(OAUTH_CONFIG.GOOGLE_CLIENT_ID);
+
   const options: Record<string, string> = {
     redirect_uri: `${
       PLATFORM_CONFIG.environment === "local"

@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { signInAsync, clearError } from "@/store/slices/authSlice";
+import { fetchMyProfileAsync } from "@/store/slices/profileSlice";
 import { AuthStackParamList } from "@/types/navigation";
 import { LoginCredentials } from "@/types/auth";
 
@@ -66,6 +67,15 @@ export const LoginScreen = () => {
       if (!result.emailVerified) {
         navigation.navigate("VerifyEmail", { email: credentials.email });
         return;
+      }
+
+      // If email is verified, fetch profile immediately
+      try {
+        await dispatch(fetchMyProfileAsync()).unwrap();
+        console.log("Profile fetched successfully after login");
+      } catch (profileError) {
+        console.warn("Failed to fetch profile after login:", profileError);
+        // Continue anyway - AppNavigator will handle retry
       }
 
       // Navigation will be handled by the AppNavigator based on auth state

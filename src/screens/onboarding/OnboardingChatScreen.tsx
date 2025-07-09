@@ -45,7 +45,6 @@ export const OnboardingChatScreen = () => {
       // when onboardingStep >= 3
     } catch (err) {
       console.error("Failed to complete onboarding:", err);
-      Alert.alert("Error", "Failed to complete onboarding. Please try again.");
     }
   };
 

@@ -12,8 +12,14 @@ import {
   Image,
   Alert,
   useWindowDimensions,
+  ScrollView,
 } from "react-native";
-import { PanGestureHandler, State } from "react-native-gesture-handler";
+import {
+  PanGestureHandler,
+  State,
+  GestureHandlerRootView,
+  ScrollView as GestureScrollView,
+} from "react-native-gesture-handler";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useSelector, useDispatch } from "react-redux";
@@ -87,6 +93,11 @@ export const EmailsScreen = () => {
   const [selectedContextViewId, setSelectedContextViewId] = useState<
     string | null
   >(null);
+
+  const [isSidebarGesture, setIsSidebarGesture] = useState(false);
+  const [isContextViewGesture, setIsContextViewGesture] = useState(false);
+  const [contextViewSwitchAnimation] = useState(new Animated.Value(0));
+  const contextViewScrollRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<any>();
@@ -113,7 +124,16 @@ export const EmailsScreen = () => {
     dispatch(fetchUserTasksAsync({}));
     dispatch(fetchMyEmailsAsync()); // Still need emails for email context tasks
     dispatch(fetchMyScenarios());
-  }, [dispatch]);
+  }, []);
+
+  // Scroll to active context view when context views change or component mounts
+  useEffect(() => {
+    if (contextViews && contextViews.length > 0) {
+      setTimeout(() => {
+        scrollActiveContextViewIntoView(selectedContextViewId);
+      }, 200);
+    }
+  }, [contextViews, selectedContextViewId]);
 
   // Fetch missing emails by IDs when user tasks reference emails that aren't in the store
   useEffect(() => {
@@ -129,7 +149,7 @@ export const EmailsScreen = () => {
     if (emailIdsToFetch.length > 0) {
       dispatch(fetchEmailsByIdsAsync(emailIdsToFetch));
     }
-  }, [userTasks, emails, dispatch]);
+  }, [userTasks.length, emails.length]);
 
   // Fetch emails by thread ID when we have emails with thread IDs that aren't fully loaded
   useEffect(() => {
@@ -144,13 +164,15 @@ export const EmailsScreen = () => {
         return threadEmails.length === 1; // Only fetch if we only have one email from the thread
       });
 
+    let timeout: NodeJS.Timeout;
     if (threadIdsToFetch.length > 0) {
       // Use the existing fetchEmailsByThreadIdAsync for each thread
-      threadIdsToFetch.forEach((threadId) => {
-        dispatch(fetchEmailsByThreadIdAsync(threadId));
-      });
+      timeout = setTimeout(() => {
+        dispatch(fetchEmailsByIdsAsync(threadIdsToFetch));
+      }, 1000);
     }
-  }, [emails, dispatch]);
+    return () => clearTimeout(timeout);
+  }, [emails.length]);
 
   const openSidebar = () => {
     setSidebarVisible(true);
@@ -171,36 +193,182 @@ export const EmailsScreen = () => {
     });
   };
 
+  const getContextViewList = () => {
+    return [
+      { id: null, name: "All", color: colors.primary },
+      ...(contextViews || [])
+        .sort((a, b) => b.importance - a.importance)
+        .map((cv) => ({
+          id: cv.id,
+          name: cv.name,
+          color: cv.color,
+        })),
+    ];
+  };
+
+  const switchToNextContextView = () => {
+    const contextViewList = getContextViewList();
+    const currentIndex = contextViewList.findIndex(
+      (cv) => cv.id === selectedContextViewId
+    );
+    const nextIndex = (currentIndex + 1) % contextViewList.length;
+    const nextContextView = contextViewList[nextIndex];
+
+    // Add visual feedback
+    Animated.sequence([
+      Animated.timing(contextViewSwitchAnimation, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contextViewSwitchAnimation, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setSelectedContextViewId(nextContextView.id);
+
+    // Scroll the new context view into view
+    setTimeout(() => {
+      scrollActiveContextViewIntoView(nextContextView.id);
+    }, 100);
+  };
+
+  const scrollActiveContextViewIntoView = (contextViewId: string | null) => {
+    const contextViewList = getContextViewList();
+    const targetIndex = contextViewList.findIndex(
+      (cv) => cv.id === contextViewId
+    );
+
+    if (targetIndex !== -1 && contextViewScrollRef.current) {
+      let scrollPosition = 0;
+
+      // Calculate approximate position based on chip width and spacing
+      if (contextViewId === null) {
+        scrollPosition = 0;
+      } else {
+        const contextViewIndex = contextViewList.findIndex(
+          (cv) => cv.id === contextViewId
+        );
+
+        scrollPosition =
+          contextViewIndex * 8 +
+          contextViewIndex * 32 +
+          contextViewList
+            .slice(0, contextViewIndex)
+            .reduce((acc, item) => acc + item.name.length * 6, 0);
+      }
+
+      contextViewScrollRef.current.scrollTo({
+        x: scrollPosition,
+        animated: true,
+      });
+    }
+  };
+
+  const switchToPreviousContextView = () => {
+    const contextViewList = getContextViewList();
+    const currentIndex = contextViewList.findIndex(
+      (cv) => cv.id === selectedContextViewId
+    );
+    const previousIndex =
+      currentIndex === 0 ? contextViewList.length - 1 : currentIndex - 1;
+    const previousContextView = contextViewList[previousIndex];
+
+    // Add visual feedback
+    Animated.sequence([
+      Animated.timing(contextViewSwitchAnimation, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contextViewSwitchAnimation, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setSelectedContextViewId(previousContextView.id);
+
+    // Scroll the new context view into view
+    setTimeout(() => {
+      scrollActiveContextViewIntoView(previousContextView.id);
+    }, 100);
+  };
+
   const onPanGestureEvent = (event: any) => {
-    const { translationX, velocityX, state, x } = event.nativeEvent;
+    const { translationX, velocityX, state, x, y } = event.nativeEvent;
+
+    // Check if gesture is in the context view area (header + context filter area)
+    const contextViewAreaHeight = 120; // Approximate height of header + context filter
+    const isInContextViewArea = y <= contextViewAreaHeight;
 
     if (state === State.BEGAN) {
-      // Only start gesture if it begins from the left edge (first 30px)
-      if (x > 30) {
-        return;
+      // Check if gesture starts from the left edge (first 50px)
+      if (x <= 40) {
+        // Mark this as a sidebar gesture
+        setIsSidebarGesture(true);
+        setIsContextViewGesture(false);
+      } else if (!isInContextViewArea) {
+        // For gestures outside context view area, check if it's a horizontal swipe
+        setIsSidebarGesture(false);
+        setIsContextViewGesture(true);
+      } else {
+        // Gesture is in context view area - don't handle it here, let the ScrollView handle it
+        setIsSidebarGesture(false);
+        setIsContextViewGesture(false);
       }
     }
 
     if (state === State.ACTIVE) {
-      // Only respond to rightward gestures from the left edge
-      if (x <= 30 && translationX > 0) {
-        // Update sidebar position in real-time
-        const progress = Math.min(translationX / (SIDEBAR_WIDTH * 0.7), 1);
-        const targetValue = -SIDEBAR_WIDTH + progress * SIDEBAR_WIDTH;
-        sidebarTranslateX.setValue(targetValue);
+      if (isSidebarGesture) {
+        // Only respond to rightward gestures from the left edge
+        if (translationX > 0) {
+          // Update sidebar position in real-time
+          const progress = Math.min(translationX / (SIDEBAR_WIDTH * 0.6), 1);
+          const targetValue = -SIDEBAR_WIDTH + progress * SIDEBAR_WIDTH;
+          sidebarTranslateX.setValue(targetValue);
 
-        if (!sidebarVisible) {
-          setSidebarVisible(true);
+          if (!sidebarVisible) {
+            setSidebarVisible(true);
+          }
         }
+      } else if (isContextViewGesture && !isInContextViewArea) {
+        // Handle context view switching gestures only outside context view area
+        // We'll handle the switching in the END state
       }
     } else if (state === State.END || state === State.CANCELLED) {
-      // Determine whether to open or close based on gesture velocity and distance
-      if (translationX > SIDEBAR_WIDTH * 0.3 || velocityX > 800) {
-        // Open sidebar
-        openSidebar();
-      } else {
-        // Close sidebar
-        closeSidebar();
+      if (isSidebarGesture) {
+        setIsSidebarGesture(false);
+        // Handle sidebar gestures
+        if (translationX > SIDEBAR_WIDTH * 0.3 || velocityX > 500) {
+          // Open sidebar
+          openSidebar();
+        } else {
+          // Close sidebar
+          closeSidebar();
+        }
+      } else if (isContextViewGesture && !isInContextViewArea) {
+        setIsContextViewGesture(false);
+        // Handle context view switching gestures only outside context view area
+        const minSwipeDistance = 50; // Minimum distance for a swipe
+        const minVelocity = 300; // Minimum velocity for a swipe
+
+        if (
+          Math.abs(translationX) > minSwipeDistance ||
+          Math.abs(velocityX) > minVelocity
+        ) {
+          if (translationX > 0 || velocityX > 0) {
+            // Right swipe - go to previous context view
+            switchToPreviousContextView();
+          } else {
+            // Left swipe - go to next context view
+            switchToNextContextView();
+          }
+        }
       }
     }
   };
@@ -453,15 +621,6 @@ export const EmailsScreen = () => {
 
   const handleTaskPress = (task: UserTask) => {
     navigation.navigate("UserTaskDetail", { userTaskId: task.id });
-  };
-
-  const handleEmailPress = (email: EmailWithoutContent) => {
-    // TODO: Navigate to email detail screen
-    console.log("Email pressed:", email.id);
-  };
-
-  const handleDraftPress = (draftId: string) => {
-    navigation.navigate("ToolExecution", { toolExecutionId: draftId });
   };
 
   const handleFilterSelect = (filter: UserTaskFilter) => {
@@ -771,7 +930,7 @@ export const EmailsScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <PanGestureHandler onHandlerStateChange={onPanGestureEvent}>
         <SafeAreaView style={styles.container}>
           <View style={styles.header}>
@@ -795,21 +954,35 @@ export const EmailsScreen = () => {
           </View>
 
           <View style={styles.contextFilterContainer}>
-            <FlatList
-              data={[
-                { id: null, name: "Important", color: colors.primary },
-                ...(contextViews || [])
-                  .sort((a, b) => b.importance - a.importance) // Sort by importance (highest first)
-                  .map((cv) => ({
-                    id: cv.id,
-                    name: cv.name,
-                    color: cv.color,
-                  })),
+            <Animated.View
+              style={[
+                styles.contextSwitchIndicator,
+                {
+                  opacity: contextViewSwitchAnimation,
+                  transform: [
+                    {
+                      scale: contextViewSwitchAnimation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.8, 1.2],
+                      }),
+                    },
+                  ],
+                },
               ]}
-              renderItem={({ item }) => {
+            />
+            <ScrollView
+              ref={contextViewScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.contextChipsContainer}
+              scrollEnabled={true}
+              nestedScrollEnabled={true}
+            >
+              {getContextViewList().map((item) => {
                 const isSelected = selectedContextViewId === item.id;
                 return (
                   <TouchableOpacity
+                    key={item.id || "all"}
                     style={[
                       styles.contextChip,
                       isSelected
@@ -824,7 +997,14 @@ export const EmailsScreen = () => {
                           : colors.border,
                       },
                     ]}
-                    onPress={() => setSelectedContextViewId(item.id)}
+                    onPress={() => {
+                      setSelectedContextViewId(item.id);
+
+                      // Scroll the selected context view into view
+                      setTimeout(() => {
+                        scrollActiveContextViewIntoView(item.id);
+                      }, 100);
+                    }}
                   >
                     <Text
                       style={[
@@ -838,12 +1018,8 @@ export const EmailsScreen = () => {
                     </Text>
                   </TouchableOpacity>
                 );
-              }}
-              keyExtractor={(item) => item.id || "all"}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.contextChipsContainer}
-            />
+              })}
+            </ScrollView>
           </View>
 
           {filteredUserTasks.length === 0 && !isLoading && renderEmptyState()}
@@ -884,7 +1060,7 @@ export const EmailsScreen = () => {
         <MaterialIcons name="add" size={20} color="#FFFFFF" />
         <Text style={styles.fabText}>Compose</Text>
       </TouchableOpacity>
-    </View>
+    </GestureHandlerRootView>
   );
 };
 
@@ -1230,6 +1406,19 @@ const createStyles = (colors: any) =>
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
       paddingVertical: 8,
+      position: "relative",
+    },
+    contextSwitchIndicator: {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.primary,
+      zIndex: 10,
+      marginLeft: -2,
+      marginTop: -2,
     },
     contextChipsContainer: {
       paddingHorizontal: 12,

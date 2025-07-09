@@ -225,6 +225,7 @@ export const profileSlice = createSlice({
     },
     clearCurrentProfile: (state) => {
       state.currentProfile = null;
+      state.hasProfileBeenFetched = false;
     },
     clearDashboardData: (state) => {
       state.dashboardData = null;
@@ -237,6 +238,25 @@ export const profileSlice = createSlice({
     },
     clearOnboardingChatId: (state) => {
       state.onboardingChatId = null;
+    },
+    clearAllProfileData: (state) => {
+      state.currentProfile = null;
+      state.dashboardData = null;
+      state.profileSharing = null;
+      state.adminProfiles = null;
+      state.isLoading = false;
+      state.isUpdating = false;
+      state.isUploadingAvatar = false;
+      state.isUploadingSharing = false;
+      state.isFetchingDashboard = false;
+      state.isFetchingUserInfo = false;
+      state.isFetchingEmailsOnboarding = false;
+      state.isAddingDocumentTypes = false;
+      state.isSearchingProfiles = false;
+      state.isCreatingFeedback = false;
+      state.error = null;
+      state.onboardingChatId = null;
+      state.hasProfileBeenFetched = false;
     },
     updateProfileFromWebSocket: (state, action: PayloadAction<Profile>) => {
       // Update current profile if it's the same one being updated
@@ -448,6 +468,7 @@ export const {
   clearProfileSharing,
   clearAdminProfiles,
   clearOnboardingChatId,
+  clearAllProfileData,
   updateProfileFromWebSocket,
 } = profileSlice.actions;
 

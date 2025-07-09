@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { signUpAsync, clearError } from "@/store/slices/authSlice";
+import { fetchMyProfileAsync } from "@/store/slices/profileSlice";
 import { AuthStackParamList } from "@/types/navigation";
 import { RegisterCredentials } from "@/types/auth";
 
@@ -74,6 +75,18 @@ export const RegisterScreen = () => {
       if (!result.emailVerified) {
         navigation.navigate("VerifyEmail", { email: credentials.email });
         return;
+      }
+
+      // If email is verified, fetch profile immediately
+      try {
+        await dispatch(fetchMyProfileAsync()).unwrap();
+        console.log("Profile fetched successfully after registration");
+      } catch (profileError) {
+        console.warn(
+          "Failed to fetch profile after registration:",
+          profileError
+        );
+        // Continue anyway - AppNavigator will handle retry
       }
 
       // Navigation will be handled by the AppNavigator based on auth state

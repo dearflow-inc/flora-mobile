@@ -13,6 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { fetchChatAsync } from "@/store/slices/chatSlice";
+import { fetchUserInfoAsync } from "@/store/slices/profileSlice";
 import { OnboardingStackParamList } from "@/types/navigation";
 import { useTheme } from "@/hooks/useTheme";
 import { useSelector } from "react-redux";
@@ -39,12 +40,11 @@ export const FetchingUserInfoScreen = () => {
   const dispatch = useAppDispatch();
   const { isLoading: isChatLoading } = useAppSelector((state) => state.chat);
   const { currentProfile } = useAppSelector((state) => state.profile);
-  const [isPolling, setIsPolling] = useState(false);
+  const [isPolling, setIsPolling] = useState<NodeJS.Timeout | null>(null);
   const chatFound = useSelector(
     (state: RootState) =>
       state.chat.currentChat?.id === currentProfile?.id + "-onboarding"
   );
-  const [pollingAttempts, setPollingAttempts] = useState(0);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [typedText, setTypedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -52,19 +52,32 @@ export const FetchingUserInfoScreen = () => {
 
   const styles = createStyles(colors);
 
-  useEffect(() => {
-    // Start polling when screen loads and profile is available
-    if (currentProfile?.id) {
-      handleStartPolling();
+  const pollForChat = async () => {
+    if (!currentProfile?.id) {
+      return;
     }
-  }, [currentProfile?.id]);
+
+    const interval = setInterval(() => {
+      if (chatFound) return;
+      try {
+        dispatch(fetchChatAsync(`${currentProfile.id}-onboarding`)).unwrap();
+      } catch (error) {}
+    }, 1000);
+
+    setIsPolling(interval);
+  };
 
   useEffect(() => {
-    // Clean up polling when component unmounts
-    return () => {
-      setIsPolling(false);
-    };
-  }, []);
+    if (chatFound && isPolling) {
+      clearInterval(isPolling);
+    } else if (chatFound) {
+      return;
+    }
+    // Start polling when screen loads and profile is available
+    if (!chatFound) {
+      pollForChat();
+    }
+  }, [chatFound]);
 
   // Typing animation effect
   useEffect(() => {
@@ -103,22 +116,8 @@ export const FetchingUserInfoScreen = () => {
     return () => clearInterval(messageInterval);
   }, [isPolling, chatFound]);
 
-  const handleStartPolling = () => {
-    setIsPolling(true);
-    setPollingAttempts(0);
-    pollForChat();
-  };
-
-  const pollForChat = async () => {
-    if (!currentProfile?.id) {
-      return;
-    }
-
-    setInterval(() => {
-      try {
-        dispatch(fetchChatAsync(`${currentProfile.id}-onboarding`)).unwrap();
-      } catch (error) {}
-    }, 1000);
+  const handleFetchUserInfo = () => {
+    dispatch(fetchUserInfoAsync());
   };
 
   const isLoading = isPolling || isChatLoading;
@@ -160,7 +159,7 @@ export const FetchingUserInfoScreen = () => {
                     Email: {currentProfile.email || "Not set"}
                   </Text>
                   <Text style={styles.profileText}>
-                    Company: {currentProfile.company || "Not set"}
+                    Description: {currentProfile.description || "Not set"}
                   </Text>
                 </View>
               )}
@@ -321,6 +320,15 @@ const createStyles = (colors: any) =>
     },
     secondaryButtonText: {
       color: colors.primary,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    tempButton: {
+      backgroundColor: colors.secondary,
+      marginBottom: 20,
+    },
+    tempButtonText: {
+      color: "#fff",
       fontSize: 16,
       fontWeight: "600",
     },
