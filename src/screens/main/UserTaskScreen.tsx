@@ -26,6 +26,9 @@ import {
   setSelectedUserTask,
   rateUserTaskAsync,
   createUserTaskAsync,
+  deleteUserTaskAsync,
+  snoozeUserTaskAsync,
+  ignoreUserTaskAsync,
 } from "@/store/slices/userTaskSlice";
 import {
   fetchEmailsByThreadIdAsync,
@@ -39,12 +42,15 @@ import {
   SystemReference,
   UserTaskTypeData,
   CreateUserTaskRequest,
+  CompleteUserTaskRequest,
+  UserTaskIgnoreReason,
 } from "@/types/userTask";
 import { Email } from "@/types/email";
 import { AppStackParamList } from "@/types/navigation";
 import { EmailContextView } from "@/components/context/EmailContextView";
 // import { VideoContextView } from "@/components/context/VideoContextView";
 import { TaskActionComponent } from "@/components/actions/TaskActionComponent";
+import { actionsByUserTaskType } from "@/utils/userTaskActions";
 
 type UserTaskScreenProps = NativeStackNavigationProp<
   AppStackParamList,
@@ -167,24 +173,90 @@ export const UserTaskScreen = () => {
     setIsRefreshing(false);
   };
 
-  const handleToggleStar = () => {
-    // TODO: Implement star/unstar functionality
-    console.log("Star button pressed");
+  const handleArchive = async () => {
+    if (!userTask) return;
+
+    try {
+      const actionConfig = actionsByUserTaskType[userTask.type];
+      const actionToUse =
+        actionConfig.archiveAction || actionConfig.defaultAction || "archive";
+
+      const completeRequest: CompleteUserTaskRequest = {
+        options:
+          userTask.actions.length > 0
+            ? userTask.actions.map((action) => ({
+                userTaskActionId: action.id,
+                options: {
+                  ignore: !actionConfig.canArchive,
+                  action: actionToUse,
+                },
+              }))
+            : [
+                {
+                  userTaskActionId: "default",
+                  options: {
+                    ignore: false,
+                    action: actionToUse,
+                  },
+                },
+              ],
+      };
+
+      await dispatch(
+        completeUserTaskAsync({
+          userTaskId: userTask.id,
+          request: completeRequest,
+        })
+      ).unwrap();
+
+      Alert.alert("Success", "Task archived successfully", [
+        { text: "OK", onPress: handleBack },
+      ]);
+    } catch (error) {
+      Alert.alert("Error", "Failed to archive task. Please try again.");
+    }
   };
 
-  const handleArchive = () => {
-    // TODO: Implement archive functionality
-    console.log("Archive button pressed");
+  const handleDelete = async () => {
+    if (!userTask) return;
+
+    Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await dispatch(deleteUserTaskAsync(userTask.id)).unwrap();
+            Alert.alert("Task Deleted", "Task has been deleted", [
+              { text: "OK", onPress: handleBack },
+            ]);
+          } catch (error) {
+            Alert.alert("Error", "Failed to delete task. Please try again.");
+          }
+        },
+      },
+    ]);
   };
 
-  const handleDelete = () => {
-    // TODO: Implement delete functionality
-    console.log("Delete button pressed");
-  };
+  const handleMarkUnread = async () => {
+    if (!userTask) return;
 
-  const handleMarkUnread = () => {
-    // TODO: Implement mark as unread functionality
-    console.log("Mark as unread button pressed");
+    try {
+      // Snooze the task for 1 hour (3600000 ms)
+      await dispatch(
+        snoozeUserTaskAsync({
+          userTaskId: userTask.id,
+          msTillReactivate: 3600000, // 1 hour
+        })
+      ).unwrap();
+
+      Alert.alert("Task Snoozed", "Task has been snoozed for 1 hour", [
+        { text: "OK", onPress: handleBack },
+      ]);
+    } catch (error) {
+      Alert.alert("Error", "Failed to snooze task. Please try again.");
+    }
   };
 
   const handleMenu = () => {
@@ -270,12 +342,15 @@ export const UserTaskScreen = () => {
       await dispatch(
         completeUserTaskAsync({
           userTaskId: userTask.id,
+          request: {
+            options: userTask.actions
+              .filter((action) => action.status === UserTaskStatus.PENDING)
+              .map((action) => ({
+                userTaskActionId: action.id,
+              })),
+          },
         })
       ).unwrap();
-
-      Alert.alert("Success", "Task completed successfully", [
-        { text: "OK", onPress: handleBack },
-      ]);
     } catch (error) {
       Alert.alert("Error", "Failed to complete task. Please try again.");
     }
@@ -284,29 +359,13 @@ export const UserTaskScreen = () => {
   const handleIgnoreTask = async () => {
     if (!userTask) return;
 
-    Alert.alert("Ignore Task", "Are you sure you want to ignore this task?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Ignore",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await dispatch(
-              updateUserTaskAsync({
-                userTaskId: userTask.id,
-                request: { status: UserTaskStatus.IGNORED },
-              })
-            ).unwrap();
-
-            Alert.alert("Task Ignored", "Task has been ignored", [
-              { text: "OK", onPress: handleBack },
-            ]);
-          } catch (error) {
-            Alert.alert("Error", "Failed to ignore task. Please try again.");
-          }
-        },
-      },
-    ]);
+    await dispatch(
+      ignoreUserTaskAsync({
+        userTaskId: userTask.id,
+        request: { reason: UserTaskIgnoreReason.OTHER },
+      })
+    ).unwrap();
+    navigation.goBack();
   };
 
   const handleActionUpdate = async (actionId: string, actionData: any) => {
@@ -517,12 +576,16 @@ export const UserTaskScreen = () => {
           <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerRight}>
-          <TouchableOpacity
+          {/*   <TouchableOpacity
             style={styles.headerButton}
             onPress={handleToggleStar}
           >
-            <MaterialIcons name="auto-awesome" size={24} color={colors.text} />
-          </TouchableOpacity>
+            <MaterialIcons
+              name={userTask?.importance === 1 ? "star" : "star-outline"}
+              size={24}
+              color={userTask?.importance === 1 ? colors.warning : colors.text}
+            />
+          </TouchableOpacity> */}
           <TouchableOpacity style={styles.headerButton} onPress={handleArchive}>
             <MaterialIcons name="archive" size={24} color={colors.text} />
           </TouchableOpacity>

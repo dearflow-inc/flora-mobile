@@ -92,30 +92,29 @@ export const updateUserTaskActionDataAsync = createAsyncThunk(
 export const ignoreUserTaskAsync = createAsyncThunk(
   "userTasks/ignoreUserTask",
   async (params: { userTaskId: string; request: IgnoreUserTaskRequest }) => {
-    const response = await userTaskService.ignoreUserTask(
-      params.userTaskId,
-      params.request
-    );
-    return response.userTask;
+    await userTaskService.ignoreUserTask(params.userTaskId, params.request);
+
+    return { userTaskId: params.userTaskId };
   }
 );
 
 export const deleteUserTaskAsync = createAsyncThunk(
   "userTasks/deleteUserTask",
   async (userTaskId: string) => {
-    const response = await userTaskService.deleteUserTask(userTaskId);
-    return response.userTask;
+    await userTaskService.deleteUserTask(userTaskId);
+
+    return {
+      userTaskId: userTaskId,
+    };
   }
 );
 
 export const completeUserTaskAsync = createAsyncThunk(
   "userTasks/completeUserTask",
   async (params: { userTaskId: string; request?: CompleteUserTaskRequest }) => {
-    const response = await userTaskService.completeUserTask(
-      params.userTaskId,
-      params.request
-    );
-    return response.userTask;
+    await userTaskService.completeUserTask(params.userTaskId, params.request);
+
+    return { userTaskId: params.userTaskId };
   }
 );
 
@@ -301,13 +300,10 @@ const userTaskSlice = createSlice({
       .addCase(ignoreUserTaskAsync.fulfilled, (state, action) => {
         state.isUpdating = false;
         const index = state.userTasks.findIndex(
-          (task) => task.id === action.payload.id
+          (task) => task.id === action.payload.userTaskId
         );
-        if (index !== -1) {
-          state.userTasks[index] = action.payload;
-        }
-        if (state.selectedUserTask?.id === action.payload.id) {
-          state.selectedUserTask = action.payload;
+        if (index !== -1 && state.userTasks[index]) {
+          state.userTasks[index].status = UserTaskStatus.IGNORED;
         }
         state.error = null;
       })
@@ -324,9 +320,9 @@ const userTaskSlice = createSlice({
       .addCase(deleteUserTaskAsync.fulfilled, (state, action) => {
         state.isUpdating = false;
         state.userTasks = state.userTasks.filter(
-          (task) => task.id !== action.payload.id
+          (task) => task.id !== action.payload.userTaskId
         );
-        if (state.selectedUserTask?.id === action.payload.id) {
+        if (state.selectedUserTask?.id === action.payload.userTaskId) {
           state.selectedUserTask = null;
         }
         state.error = null;
@@ -344,13 +340,10 @@ const userTaskSlice = createSlice({
       .addCase(completeUserTaskAsync.fulfilled, (state, action) => {
         state.isUpdating = false;
         const index = state.userTasks.findIndex(
-          (task) => task.id === action.payload.id
+          (task) => task.id === action.payload.userTaskId
         );
-        if (index !== -1) {
-          state.userTasks[index] = action.payload;
-        }
-        if (state.selectedUserTask?.id === action.payload.id) {
-          state.selectedUserTask = action.payload;
+        if (index !== -1 && state.userTasks[index]) {
+          state.userTasks[index].status = UserTaskStatus.COMPLETED;
         }
         state.error = null;
       })

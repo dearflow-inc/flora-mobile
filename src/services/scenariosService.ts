@@ -36,7 +36,7 @@ class ScenariosService {
         await this.api.get("/scenarios/my");
       return response.data.scenarios;
     } catch (error) {
-      console.error("Error fetching my scenarios:", error);
+      console.error(" scenarios:", error);
       throw error;
     }
   }

@@ -118,6 +118,7 @@ export interface UpdateUserTaskRequest {
   description?: string;
   contextViewId?: string;
   status?: UserTaskStatus;
+  importance?: number;
   updateRules?: Record<string, any>;
 }
 
@@ -131,7 +132,7 @@ export interface IgnoreUserTaskRequest {
 }
 
 export interface CompleteUserTaskRequest {
-  options?: Record<string, any>;
+  options: Array<{ userTaskActionId: string; options?: any }>;
 }
 
 export interface RateUserTaskRequest {

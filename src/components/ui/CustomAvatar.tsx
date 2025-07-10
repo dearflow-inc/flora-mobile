@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 
 interface CustomAvatarProps {
-  src?: string;
+  src?: string | number;
   alt?: string;
   size?: number;
 }
@@ -23,7 +23,10 @@ export const CustomAvatar: React.FC<CustomAvatarProps> = ({
   return (
     <View style={styles.container}>
       {src ? (
-        <Image source={{ uri: src }} style={styles.image} />
+        <Image
+          source={typeof src === "string" ? { uri: src } : src}
+          style={styles.image}
+        />
       ) : (
         <View style={styles.gradient}>
           <Text style={styles.initial}>{getInitial()}</Text>

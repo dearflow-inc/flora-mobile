@@ -205,7 +205,9 @@ class UserTaskService {
    */
   async completeUserTask(
     userTaskId: string,
-    request: CompleteUserTaskRequest = {}
+    request: CompleteUserTaskRequest = {
+      options: [],
+    }
   ): Promise<UserTaskResponse> {
     try {
       const response = await this.api.post<UserTaskResponse>(

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,12 @@ import {
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useDispatch } from "react-redux";
 import { useTheme } from "@/hooks/useTheme";
 import { Email } from "@/types/email";
 import { CustomAvatar } from "@/components/ui/CustomAvatar";
+import { markEmailAsReadAsync } from "@/store/slices/emailSlice";
+import { AppDispatch } from "@/store";
 
 interface EmailContextViewProps {
   emails: Email[];
@@ -22,7 +25,23 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
 }) => {
   const { colors, isDark } = useTheme();
   const { width, height } = useWindowDimensions();
+  const dispatch = useDispatch<AppDispatch>();
   const styles = createStyles(colors, height);
+
+  // Mark emails as read when component renders
+  useEffect(() => {
+    if (emails && emails.length > 0) {
+      // Get the threadId from the first email (all emails in a thread should have the same threadId)
+      const threadId = emails[0]?.threadId;
+
+      if (threadId) {
+        // Mark the thread as read by passing the threadId
+        dispatch(markEmailAsReadAsync(threadId)).catch((error) => {
+          console.warn("Failed to mark email thread as read:", error);
+        });
+      }
+    }
+  }, [emails, dispatch]);
 
   // Get the available width for the WebView (account for padding)
   const getWebViewWidth = () => {

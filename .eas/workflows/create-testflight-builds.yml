@@ -11,5 +11,6 @@ jobs:
     params:
       platform: ios
       profile: testflight
+      build_id: ${{ build_ios.build_id }}
     dependsOn:
       - build_ios
