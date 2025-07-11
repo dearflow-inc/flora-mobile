@@ -114,7 +114,9 @@ export const EmailBody: React.FC<EmailBodyProps> = ({
             color: colors.text,
           }}
           onFocus={() => setIsEditing(true)}
-          onBlur={() => setIsEditing(false)}
+          onBlur={() => {
+            setIsEditing(false);
+          }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}

@@ -401,6 +401,18 @@ export const UserTaskScreen = () => {
   const handleToggleSuggestions = () => {
     setIsSuggestionsExpanded(!isSuggestionsExpanded);
   };
+
+  // Helper function to determine if task should navigate to EmailThreadScreen
+  const shouldNavigateToEmailThread = (task: UserTask): boolean => {
+    const isCompleted =
+      task.status === UserTaskStatus.COMPLETED ||
+      task.status === UserTaskStatus.COMPLETED_EXTERNAL;
+    const isEmailRelated = task.context.some((ctx) => ctx.type === "email");
+    const isEmailCleanUp = task.type === UserTaskType.EMAIL_CLEAN_UP;
+
+    return isCompleted && isEmailRelated && !isEmailCleanUp;
+  };
+
   const { width, height } = useWindowDimensions();
 
   const renderContext = () => {
@@ -408,7 +420,17 @@ export const UserTaskScreen = () => {
       return null; // Hide the entire context section when there's no context
     }
 
+    // If task is completed, expand context to full height
+    const isCompleted =
+      userTask.status === UserTaskStatus.COMPLETED ||
+      userTask.status === UserTaskStatus.COMPLETED_EXTERNAL;
+
     const getWebViewHeight = () => {
+      if (isCompleted) {
+        // Full height minus header for completed tasks
+        return Math.floor(height - 120);
+      }
+      // Original height calculation for pending tasks
       return Math.floor(height - (pendingActions?.length || 0 ? 335 : 300));
     };
 
@@ -425,7 +447,10 @@ export const UserTaskScreen = () => {
       >
         {/* Email Context */}
         {contextData.emails && contextData.emails.length > 0 && (
-          <EmailContextView emails={contextData.emails} />
+          <EmailContextView
+            emails={contextData.emails}
+            extraHeightDeduction={isCompleted ? 0 : 175}
+          />
         )}
 
         {/* Video Context */}
@@ -576,6 +601,30 @@ export const UserTaskScreen = () => {
           <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerRight}>
+          {/* Show email thread button for completed email tasks */}
+          {userTask &&
+            shouldNavigateToEmailThread(userTask) &&
+            contextData.emails &&
+            contextData.emails.length > 0 && (
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={() => {
+                  const emailContext = userTask.context.find(
+                    (ctx) => ctx.type === "email"
+                  );
+                  const relatedEmail = contextData.emails?.find(
+                    (email) => email.id === emailContext?.emailId
+                  );
+                  if (relatedEmail?.threadId) {
+                    navigation.navigate("EmailThreadDetail", {
+                      threadId: relatedEmail.threadId,
+                    });
+                  }
+                }}
+              >
+                <MaterialIcons name="email" size={24} color={colors.text} />
+              </TouchableOpacity>
+            )}
           <TouchableOpacity style={styles.headerButton} onPress={handleArchive}>
             <MaterialIcons name="archive" size={24} color={colors.text} />
           </TouchableOpacity>

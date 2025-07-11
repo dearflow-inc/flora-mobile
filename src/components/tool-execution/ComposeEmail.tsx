@@ -68,12 +68,7 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
   const [aiQuestion, setAiQuestion] = useState("");
   const [showAiModal, setShowAiModal] = useState(false);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
-  const [pendingSend, setPendingSend] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [undoSendTimer, setUndoSendTimer] = useState(0);
-  const [undoSendTimeout, setUndoSendTimeout] = useState<NodeJS.Timeout | null>(
-    null
-  );
 
   // Email input states
   const [toInputValue, setToInputValue] = useState("");
@@ -118,35 +113,6 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
     return () => clearTimeout(timeoutId);
   }, [emailData, toolExecution.id]);
 
-  // Undo send timer effect
-  useEffect(() => {
-    if (!pendingSend || undoSendTimer === 0) return;
-
-    if (undoSendTimer === 1) {
-      const timeout = setTimeout(() => {
-        setPendingSend(false);
-        setUndoSendTimer(0);
-        setUndoSendTimeout(null);
-        handleSendEmail();
-      }, 1000);
-      setUndoSendTimeout(timeout);
-      return () => clearTimeout(timeout);
-    }
-
-    const interval = setTimeout(() => {
-      setUndoSendTimer((t) => t - 1);
-    }, 1000);
-    setUndoSendTimeout(interval);
-    return () => clearTimeout(interval);
-  }, [pendingSend, undoSendTimer]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (undoSendTimeout) clearTimeout(undoSendTimeout);
-    };
-  }, [undoSendTimeout]);
-
   const updateEmailData = (updates: Partial<EmailDraftData>) => {
     setEmailData((prev) => ({ ...prev, ...updates }));
   };
@@ -181,6 +147,10 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
     console.log(`Contact selection for ${field} is handled by dropdown`);
   };
 
+  // Check if send button should be disabled
+  const isSendDisabled =
+    !emailData.to.length || !emailData.subject.trim() || !emailData.body.trim();
+
   const handleSendEmail = async () => {
     if (!emailData.to.length) {
       Alert.alert("Error", "Please enter at least one recipient email address");
@@ -202,7 +172,6 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
         })
       ).unwrap();
 
-      Alert.alert("Success", "Email sent successfully!");
       onSend?.();
     } catch (error) {
       Alert.alert("Error", "Failed to send email. Please try again.");
@@ -212,19 +181,7 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
   };
 
   const handleSendClick = () => {
-    if (onSend) {
-      onSend();
-    } else {
-      setPendingSend(true);
-      setUndoSendTimer(5);
-    }
-  };
-
-  const handleUndoSend = () => {
-    if (undoSendTimeout) clearTimeout(undoSendTimeout);
-    setPendingSend(false);
-    setUndoSendTimer(0);
-    setUndoSendTimeout(null);
+    handleSendEmail();
   };
 
   const handleAskAI = async () => {
@@ -373,13 +330,11 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
         onFollowUp={() => setShowFollowUpModal(true)}
         onAttach={handleAttach}
         onSend={handleSendClick}
-        onUndoSend={handleUndoSend}
         isAskingAI={isAskingAI}
         isSending={isSending}
         isExecuting={isExecuting}
         hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
-        pendingSend={pendingSend}
-        undoSendTimer={undoSendTimer}
+        disabled={isSendDisabled}
       />
 
       {/* Modals */}

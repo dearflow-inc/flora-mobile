@@ -122,7 +122,7 @@ export const getFilterTitle = (filter: UserTaskFilter): string => {
     case "inbox":
       return "Inbox";
     case "archived":
-      return "Completed";
+      return "Archived / Completed";
     case "draft":
       return "Drafts";
     case "sent":
@@ -207,7 +207,10 @@ export const getEmailSenderInfo = (
         relatedEmail.from.meta?.email ||
         "Unknown",
       isFromEmail: true,
-      previewText: relatedEmail?.previewText,
+      subject: relatedEmail?.subject || task.title || task.description,
+      previewText:
+        relatedEmail?.previewText ||
+        (task.title && task.title !== task.description ? task.description : ""),
     };
   }
 
@@ -219,19 +222,26 @@ export const getEmailSenderInfo = (
       return {
         name: emailMatch[1].trim(),
         isFromEmail: true,
-        previewText: "",
+        subject: task.title || task.description,
+        previewText:
+          task.title && task.title !== task.description ? task.description : "",
       };
     }
     return {
       name: "-",
       isFromEmail: true,
-      previewText: "-",
+      subject: task.title || task.description,
+      previewText:
+        task.title && task.title !== task.description ? task.description : "",
     };
   }
 
   return {
     name: "Flora",
     isFromEmail: false,
+    subject: task.title || task.description,
+    previewText:
+      task.title && task.title !== task.description ? task.description : "",
   };
 };
 

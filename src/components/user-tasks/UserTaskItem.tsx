@@ -21,6 +21,7 @@ import {
   formatTimestamp,
   getEmailFromContext,
 } from "@/utils/taskUtils";
+import { UserTaskFilter } from "@/utils/taskUtils";
 
 const { width: screenWidth } = Dimensions.get("window");
 const SWIPE_THRESHOLD = screenWidth * 0.25;
@@ -31,6 +32,7 @@ interface UserTaskItemProps {
   onPress: (task: UserTask) => void;
   onDelete?: (taskId: string) => void;
   onArchive?: (taskId: string) => void;
+  activeFilter?: UserTaskFilter;
 }
 
 export const UserTaskItem: React.FC<UserTaskItemProps> = ({
@@ -39,6 +41,7 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
   onPress,
   onDelete,
   onArchive,
+  activeFilter,
 }) => {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
@@ -56,7 +59,13 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
     relatedEmail?.status?.internalRead === true ||
     !relatedEmail?.externalLabels?.includes(EmailLabel.UNREAD);
 
+  // Check if this is a completed task (archived filter)
+  const isCompletedTask = activeFilter === "archived";
+
   const onGestureEvent = (event: any) => {
+    // Disable swipe functionality for completed tasks
+    if (isCompletedTask) return;
+
     const { translationX, state } = event.nativeEvent;
 
     if (state === State.ACTIVE) {
@@ -80,6 +89,9 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
   };
 
   const onHandlerStateChange = (event: any) => {
+    // Disable swipe functionality for completed tasks
+    if (isCompletedTask) return;
+
     const { translationX, state, velocityX } = event.nativeEvent;
 
     if (state === State.END) {
@@ -165,39 +177,43 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
 
   return (
     <View style={styles.taskContainer}>
-      {/* Left background (delete) */}
-      <Animated.View
-        style={[
-          styles.swipeBackground,
-          styles.leftBackground,
-          {
-            opacity: leftBackgroundOpacity,
-            backgroundColor: colors.danger,
-          },
-        ]}
-      >
-        <View style={styles.swipeIndicatorCenter}>
-          <MaterialIcons name="delete" size={24} color="white" />
-          <Text style={styles.swipeText}>Delete</Text>
-        </View>
-      </Animated.View>
+      {/* Left background (delete) - only show for non-completed tasks */}
+      {!isCompletedTask && (
+        <Animated.View
+          style={[
+            styles.swipeBackground,
+            styles.leftBackground,
+            {
+              opacity: leftBackgroundOpacity,
+              backgroundColor: colors.danger,
+            },
+          ]}
+        >
+          <View style={styles.swipeIndicatorCenter}>
+            <MaterialIcons name="delete" size={24} color="white" />
+            <Text style={styles.swipeText}>Delete</Text>
+          </View>
+        </Animated.View>
+      )}
 
-      {/* Right background (archive) */}
-      <Animated.View
-        style={[
-          styles.swipeBackground,
-          styles.rightBackground,
-          {
-            opacity: rightBackgroundOpacity,
-            backgroundColor: colors.success,
-          },
-        ]}
-      >
-        <View style={styles.swipeIndicatorCenter}>
-          <MaterialIcons name="archive" size={24} color="white" />
-          <Text style={styles.swipeText}>Archive</Text>
-        </View>
-      </Animated.View>
+      {/* Right background (archive) - only show for non-completed tasks */}
+      {!isCompletedTask && (
+        <Animated.View
+          style={[
+            styles.swipeBackground,
+            styles.rightBackground,
+            {
+              opacity: rightBackgroundOpacity,
+              backgroundColor: colors.success,
+            },
+          ]}
+        >
+          <View style={styles.swipeIndicatorCenter}>
+            <MaterialIcons name="archive" size={24} color="white" />
+            <Text style={styles.swipeText}>Archive</Text>
+          </View>
+        </Animated.View>
+      )}
 
       <PanGestureHandler
         onGestureEvent={onGestureEvent}
@@ -205,6 +221,7 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
         shouldCancelWhenOutside={false}
         activeOffsetX={[-5, 5]}
         failOffsetY={[-20, 20]}
+        enabled={!isCompletedTask}
       >
         <Animated.View
           style={[
@@ -232,7 +249,7 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
                       : require("../../../assets/images/flora.png")
                   }
                   alt={senderInfo.isFromEmail ? senderInfo.name : "Flora"}
-                  size={40}
+                  size={60}
                 />
               </View>
 
@@ -256,23 +273,25 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
 
                 {/* Task Title */}
                 <Text style={styles.subject} numberOfLines={2}>
-                  {task.title}
+                  {senderInfo.subject}
                 </Text>
 
-                {/* Task Description */}
-                {task.description && (
+                {/* Task Description and Actions Container */}
+                <View style={styles.previewActionsContainer}>
                   <Text style={styles.preview} numberOfLines={2}>
-                    {task.description}
+                    {senderInfo.previewText.trim()}
                   </Text>
-                )}
 
-                {/* Task Actions */}
-                <View style={styles.taskActions}>
-                  {getTaskActions(task).map((action, index) => (
-                    <View key={index} style={styles.actionChip}>
-                      <Text style={styles.actionText}>{action}</Text>
+                  {/* Task Actions - only show for non-completed tasks */}
+                  {!isCompletedTask && (
+                    <View style={styles.taskActions}>
+                      {getTaskActions(task).map((action, index) => (
+                        <View key={index} style={styles.actionChip}>
+                          <Text style={styles.actionText}>{action}</Text>
+                        </View>
+                      ))}
                     </View>
-                  ))}
+                  )}
                 </View>
               </View>
             </View>
@@ -288,6 +307,7 @@ const createStyles = (colors: any) =>
     taskContainer: {
       position: "relative",
       overflow: "hidden",
+      height: 110,
     },
     swipeBackground: {
       position: "absolute",
@@ -298,16 +318,19 @@ const createStyles = (colors: any) =>
       justifyContent: "center",
       alignItems: "center",
       zIndex: 1,
+      height: 110,
     },
     leftBackground: {
       justifyContent: "center",
       alignItems: "flex-end",
       paddingRight: 20,
+      height: 110,
     },
     rightBackground: {
       justifyContent: "center",
       alignItems: "flex-start",
       paddingLeft: 20,
+      height: 110,
     },
     swipeIndicatorCenter: {
       flexDirection: "row",
@@ -327,10 +350,12 @@ const createStyles = (colors: any) =>
       borderBottomColor: colors.border,
       position: "relative",
       zIndex: 2,
+      height: 110,
     },
     taskItem: {
       borderLeftWidth: 4,
       borderLeftColor: colors.primary,
+      height: 150,
     },
     taskTouchable: {
       flex: 1,
@@ -342,7 +367,7 @@ const createStyles = (colors: any) =>
       paddingVertical: 0,
     },
     avatarColumn: {
-      width: 48,
+      width: 70,
       alignItems: "center",
       paddingTop: 2,
     },
@@ -381,6 +406,9 @@ const createStyles = (colors: any) =>
       color: colors.text,
       marginBottom: 4,
     },
+    previewActionsContainer: {
+      position: "relative",
+    },
     preview: {
       fontSize: 14,
       color: colors.textSecondary,
@@ -388,14 +416,23 @@ const createStyles = (colors: any) =>
       marginBottom: 8,
     },
     taskActions: {
+      position: "absolute",
+      bottom: 0,
+      right: 0,
       flexDirection: "row",
       flexWrap: "wrap",
+      justifyContent: "flex-end",
       gap: 8,
+      zIndex: 1,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      paddingTop: 4,
+      paddingLeft: 4,
     },
     actionChip: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.primary + "10",
+      backgroundColor: colors.primary + "30",
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 12,

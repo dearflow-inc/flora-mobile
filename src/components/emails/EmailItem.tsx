@@ -11,7 +11,11 @@ import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { CustomAvatar } from "@/components/ui/CustomAvatar";
-import { EmailWithoutContent } from "@/types/email";
+import { AuthorType, EmailWithoutContent } from "@/types/email";
+import { RootState } from "@/store";
+import { useSelector } from "react-redux";
+import { Contact } from "@/types/contact";
+import { useContacts } from "@/hooks/useContacts";
 
 const { width: screenWidth } = Dimensions.get("window");
 const SWIPE_THRESHOLD = screenWidth * 0.25;
@@ -42,6 +46,10 @@ export const EmailItem: React.FC<EmailItemProps> = ({
   const translateX = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
   const backgroundOpacity = useRef(new Animated.Value(0)).current;
+  const profile = useSelector(
+    (state: RootState) => state.profile.currentProfile
+  );
+  const { contacts } = useContacts();
 
   const styles = createStyles(colors);
 
@@ -59,17 +67,36 @@ export const EmailItem: React.FC<EmailItemProps> = ({
     }
   };
 
-  const getSenderInfo = () => {
-    if (email.isOutgoing) {
-      return {
-        name: "You",
-        email: "you@example.com",
-        isOutgoing: true,
-      };
+  const getContactName = (externalId: string): string => {
+    const contact = contacts.find((c) => c.id === externalId);
+
+    if (contact) {
+      if (contact.firstName && contact.lastName) {
+        return `${contact.firstName} ${contact.lastName}`;
+      } else if (contact.firstName) {
+        return contact.firstName;
+      } else if (contact.lastName) {
+        return contact.lastName;
+      } else if (contact.emailAddresses) {
+        return contact.emailAddresses[0].address;
+      }
     }
+    return "";
+  };
+
+  const getContactAvatar = (externalId: string): string => {
+    const contact = contacts.find((c) => c.id === externalId);
+    return contact?.avatar || "";
+  };
+
+  const getSenderInfo = () => {
     return {
       name: email.from.meta?.name || email.from.meta?.email || "Unknown",
       email: email.from.meta?.email || "unknown@example.com",
+      avatar:
+        email.from.type === AuthorType.PROFILE
+          ? getContactAvatar(email.from.externalId)
+          : "",
       isOutgoing: false,
     };
   };
@@ -79,13 +106,19 @@ export const EmailItem: React.FC<EmailItemProps> = ({
       const allRecipients = [...email.to, ...email.cc, ...email.bcc];
       if (allRecipients.length === 0) return "No recipients";
 
-      const recipientEmails = allRecipients.map(
-        (r) => r.meta?.email || r.meta?.name || "Unknown"
-      );
-      if (recipientEmails.length === 1) {
-        return recipientEmails[0];
+      const recipientNames = allRecipients.map((r) => {
+        if (r.type === AuthorType.CONTACT) {
+          const contactName = getContactName(r.externalId);
+
+          return contactName || r.meta?.name || r.meta?.email || "Unknown";
+        }
+        return r.meta?.name || r.meta?.email || "Unknown";
+      });
+
+      if (recipientNames.length === 1) {
+        return recipientNames[0];
       }
-      return `${recipientEmails[0]} +${recipientEmails.length - 1} more`;
+      return `${recipientNames[0]} +${recipientNames.length - 1} more`;
     }
     return "";
   };
@@ -182,11 +215,15 @@ export const EmailItem: React.FC<EmailItemProps> = ({
               <View style={styles.avatarColumn}>
                 <CustomAvatar
                   src={
-                    email.isOutgoing
-                      ? undefined
-                      : require("../../../assets/images/flora.png")
+                    email.from.type === AuthorType.PROFILE
+                      ? getContactAvatar(email.from.externalId)
+                      : getSenderInfo().avatar
                   }
-                  alt={email.isOutgoing ? "You" : senderInfo.name}
+                  alt={
+                    email.from.type === AuthorType.PROFILE
+                      ? getContactName(email.to[0].externalId)
+                      : senderInfo.name
+                  }
                   size={40}
                 />
               </View>
@@ -195,7 +232,23 @@ export const EmailItem: React.FC<EmailItemProps> = ({
               <View style={styles.contentColumn}>
                 <View style={styles.nameRow}>
                   <Text style={styles.sender} numberOfLines={1}>
-                    {email.isOutgoing ? "You" : senderInfo.name}
+                    {email.from.type === AuthorType.PROFILE
+                      ? `To: ${email.to
+                          .map((t) => {
+                            let res;
+                            if (t.type === AuthorType.CONTACT) {
+                              const contactName = getContactName(t.externalId);
+
+                              res =
+                                contactName || t.meta?.name || t.meta?.email;
+                            } else {
+                              res = t.meta?.name || t.meta?.email;
+                            }
+
+                            return res?.replaceAll("undefined", "").trim();
+                          })
+                          .join(", ")}`
+                      : senderInfo.name}
                   </Text>
                   <Text style={styles.timestamp}>
                     {formatTimestamp(email.sent)}

@@ -13,6 +13,7 @@ import { SettingsScreen } from "@/screens/main/SettingsScreen";
 import { ContactSupportScreen } from "@/screens/main/ContactSupportScreen";
 import { ToolExecutionScreen } from "@/screens/main/ToolExecutionScreen";
 import { UserTaskScreen } from "@/screens/main/UserTaskScreen";
+import { EmailThreadScreen } from "@/screens/main/EmailThreadScreen";
 import { useTheme } from "@/hooks/useTheme";
 import { NavigationListener } from "@/components/NavigationListener";
 
@@ -115,6 +116,11 @@ export const AppStackNavigator = () => {
       <Stack.Screen
         name="UserTaskDetail"
         component={UserTaskScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EmailThreadDetail"
+        component={EmailThreadScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

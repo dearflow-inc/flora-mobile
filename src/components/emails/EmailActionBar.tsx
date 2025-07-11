@@ -15,13 +15,10 @@ interface EmailActionBarProps {
   onFollowUp: () => void;
   onAttach: () => void;
   onSend: () => void;
-  onUndoSend: () => void;
   isAskingAI: boolean;
   isSending: boolean;
   isExecuting: boolean;
   hasFollowUp: boolean;
-  pendingSend: boolean;
-  undoSendTimer: number;
   disabled?: boolean;
 }
 
@@ -31,13 +28,10 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
   onFollowUp,
   onAttach,
   onSend,
-  onUndoSend,
   isAskingAI,
   isSending,
   isExecuting,
   hasFollowUp,
-  pendingSend,
-  undoSendTimer,
   disabled = false,
 }) => {
   const { colors } = useTheme();
@@ -100,32 +94,23 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
 
       {/* Send Section */}
       <View style={styles.sendSection}>
-        {!pendingSend ? (
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              isLoadingOrDisabled && styles.sendButtonDisabled,
-            ]}
-            onPress={onSend}
-            disabled={isLoadingOrDisabled}
-          >
-            {isSending || isExecuting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <MaterialIcons name="send" size={18} color="#FFFFFF" />
-                <Text style={styles.sendButtonText}>Send</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.undoSendContainer}>
-            <Text style={styles.undoSendText}>Sending in {undoSendTimer}s</Text>
-            <TouchableOpacity style={styles.undoButton} onPress={onUndoSend}>
-              <Text style={styles.undoButtonText}>Undo</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <TouchableOpacity
+          style={[
+            styles.sendButton,
+            isLoadingOrDisabled && styles.sendButtonDisabled,
+          ]}
+          onPress={onSend}
+          disabled={isLoadingOrDisabled}
+        >
+          {isSending || isExecuting ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <MaterialIcons name="send" size={18} color="#FFFFFF" />
+              <Text style={styles.sendButtonText}>Send</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -171,30 +156,5 @@ const createStyles = (colors: any) =>
       fontSize: 16,
       fontWeight: "600",
       marginLeft: 6,
-    },
-    undoSendContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    undoSendText: {
-      fontSize: 14,
-      color: colors.text,
-      marginRight: 12,
-    },
-    undoButton: {
-      backgroundColor: colors.primary,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      borderRadius: 6,
-    },
-    undoButtonText: {
-      color: "#FFFFFF",
-      fontSize: 14,
-      fontWeight: "500",
     },
   });

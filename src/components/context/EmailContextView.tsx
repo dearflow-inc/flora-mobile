@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -18,15 +18,47 @@ import { AppDispatch } from "@/store";
 
 interface EmailContextViewProps {
   emails: Email[];
+  extraHeightDeduction?: number;
 }
 
 export const EmailContextView: React.FC<EmailContextViewProps> = ({
   emails,
+  extraHeightDeduction = 0,
 }) => {
   const { colors, isDark } = useTheme();
   const { width, height } = useWindowDimensions();
   const dispatch = useDispatch<AppDispatch>();
   const styles = createStyles(colors, height);
+
+  // State to track which emails are expanded
+  const [expandedEmails, setExpandedEmails] = useState<Set<string>>(new Set());
+
+  // Initialize expanded emails - only the latest email should be expanded initially
+  useEffect(() => {
+    if (emails && emails.length > 0) {
+      // Sort emails by date to find the latest one
+      const sortedEmails = [...emails].sort(
+        (a, b) => new Date(a.sent).getTime() - new Date(b.sent).getTime()
+      );
+      const latestEmail = sortedEmails[sortedEmails.length - 1];
+
+      // Set only the latest email as expanded
+      setExpandedEmails(new Set([latestEmail.id]));
+    }
+  }, [emails]);
+
+  // Toggle email expansion
+  const toggleEmailExpansion = (emailId: string) => {
+    setExpandedEmails((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(emailId)) {
+        newSet.delete(emailId);
+      } else {
+        newSet.add(emailId);
+      }
+      return newSet;
+    });
+  };
 
   // Mark emails as read when component renders
   useEffect(() => {
@@ -46,7 +78,23 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
   // Get the available width for the WebView (account for padding)
   const getWebViewWidth = () => {
     // Account for horizontal padding from emailItem (16px on each side)
-    return width - 32;
+    return width - 64;
+  };
+
+  // Calculate dynamic height for WebView based on available space
+  const getWebViewHeight = () => {
+    // Account for email header (~60px), outgoing indicator (~20px), and some buffer
+    const headerHeight = 60;
+    const indicatorHeight = 20;
+    const buffer = 150;
+
+    // Use a reasonable portion of the screen height, but cap it
+    const minHeight = 200; // Minimum height to ensure content is visible
+
+    return Math.max(
+      minHeight,
+      height - headerHeight - indicatorHeight - buffer - extraHeightDeduction
+    );
   };
 
   if (!emails || emails.length === 0) {
@@ -132,6 +180,9 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
       ? sanitizeHtml(contentToRender)
       : contentToRender;
 
+    // State to track WebView height
+    const [webViewHeight, setWebViewHeight] = useState(200);
+
     // Show full content for newest email, truncated for others
     if (isOpen) {
       if (htmlContent) {
@@ -145,7 +196,7 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
               <style>
                 body {
                   margin: 0;
-                  padding: 0 0 30px 0;
+                  padding: 0;
                   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                   font-size: 14px;
                   line-height: 1.4;
@@ -223,6 +274,47 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
             </head>
             <body>
               ${sanitizedContent}
+              <script>
+                // Measure content height and send to React Native
+                function measureHeight() {
+                  const height = document.body.scrollHeight;
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'height',
+                    height: height
+                  }));
+                }
+                
+                // Measure on load and after a short delay to handle dynamic content
+                window.addEventListener('load', function() {
+                  setTimeout(measureHeight, 100);
+                });
+                
+                // Also measure when images load
+                document.addEventListener('DOMContentLoaded', function() {
+                  const images = document.querySelectorAll('img');
+                  let loadedImages = 0;
+                  
+                  if (images.length === 0) {
+                    measureHeight();
+                  } else {
+                    images.forEach(img => {
+                      if (img.complete) {
+                        loadedImages++;
+                        if (loadedImages === images.length) {
+                          measureHeight();
+                        }
+                      } else {
+                        img.addEventListener('load', function() {
+                          loadedImages++;
+                          if (loadedImages === images.length) {
+                            measureHeight();
+                          }
+                        });
+                      }
+                    });
+                  }
+                });
+              </script>
             </body>
           </html>
         `;
@@ -232,22 +324,38 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
             style={[
               styles.webViewContainer,
               {
-                height: "100%",
                 width: getWebViewWidth(),
+                height: webViewHeight,
               },
             ]}
           >
             <WebView
               source={{ html: htmlWithViewport }}
-              style={[styles.webView, { width: getWebViewWidth() }]}
-              scrollEnabled={true}
+              style={[
+                styles.webView,
+                { width: getWebViewWidth(), height: webViewHeight },
+              ]}
+              scrollEnabled={false}
               showsVerticalScrollIndicator={false}
               showsHorizontalScrollIndicator={false}
               originWhitelist={["*"]}
-              javaScriptEnabled={false}
+              javaScriptEnabled={true}
               domStorageEnabled={false}
               startInLoadingState={false}
               scalesPageToFit={false}
+              onMessage={(event) => {
+                try {
+                  const data = JSON.parse(event.nativeEvent.data);
+                  if (data.type === "height") {
+                    setWebViewHeight(data.height + 50);
+                  }
+                } catch (error) {
+                  console.warn("Failed to parse WebView message:", error);
+                }
+              }}
+              onLoadEnd={() => {
+                // WebView has finished loading
+              }}
             />
           </View>
         );
@@ -263,9 +371,8 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
         .substring(0, 200);
 
       return (
-        <Text style={styles.emailContent}>
+        <Text style={styles.emailContent} numberOfLines={1}>
           {plainTextPreview}
-          <Text style={styles.readMoreText}> ... Read more</Text>
         </Text>
       );
     }
@@ -277,7 +384,15 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
   );
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          height: getWebViewHeight(),
+          maxHeight: getWebViewHeight(),
+        },
+      ]}
+    >
       <ScrollView
         style={styles.emailsContainer}
         contentContainerStyle={styles.scrollContentContainer}
@@ -287,17 +402,22 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
           if (ref && sortedEmails.length > 1) {
             setTimeout(() => {
               // Calculate approximate position of the newest email
-              // Each email item has roughly 120px height, scroll to show the newest email at top
-              const newestEmailPosition = (sortedEmails.length - 1) * 120;
+              // Since emails are collapsed initially, each email item has roughly 80px height
+              const newestEmailPosition = (sortedEmails.length - 1) * 80;
               ref.scrollTo({ y: newestEmailPosition, animated: true });
             }, 100);
           }
         }}
       >
         {sortedEmails.map((email, index) => {
+          const isExpanded = expandedEmails.has(email.id);
           return (
             <View key={email.id} style={[styles.emailItem]}>
-              <View style={styles.emailHeader}>
+              <TouchableOpacity
+                style={styles.emailHeader}
+                onPress={() => toggleEmailExpansion(email.id)}
+                activeOpacity={0.7}
+              >
                 <View style={styles.emailHeaderLeft}>
                   <CustomAvatar
                     alt={
@@ -337,6 +457,11 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
                   <Text style={styles.emailTimestamp}>
                     {formatTimestamp(email.sent)}
                   </Text>
+                  <MaterialIcons
+                    name={isExpanded ? "expand-less" : "expand-more"}
+                    size={20}
+                    color={colors.textSecondary}
+                  />
                   <TouchableOpacity style={styles.actionButton}>
                     <MaterialIcons
                       name="reply"
@@ -352,10 +477,10 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
                     />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
 
               <View style={styles.emailContentWrapper}>
-                {renderEmailContent(email, true)}
+                {renderEmailContent(email, isExpanded)}
               </View>
 
               {email.isOutgoing && (
@@ -391,10 +516,12 @@ const createStyles = (colors: any, height: number) =>
       borderBottomColor: colors.border,
     },
     emailHeader: {
+      marginTop: 8,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
       marginBottom: 12,
+      paddingVertical: 4,
     },
     emailHeaderLeft: {
       flexDirection: "row",
@@ -444,8 +571,9 @@ const createStyles = (colors: any, height: number) =>
     },
     emailContent: {
       fontSize: 14,
-      color: colors.text,
-      lineHeight: 20,
+      color: colors.textSecondary,
+      lineHeight: 14,
+      marginBottom: 8,
     },
     readMoreText: {
       color: colors.primary,
@@ -484,10 +612,23 @@ const createStyles = (colors: any, height: number) =>
       color: colors.textSecondary,
       marginTop: 8,
     },
-    emailContentWrapper: {},
-    webViewContainer: {},
+    emailContentWrapper: {
+      minHeight: 0,
+    },
+    webViewContainer: {
+      minHeight: 100,
+    },
     webView: {
       backgroundColor: "transparent",
       padding: 0,
+    },
+    collapsedIndicator: {
+      paddingVertical: 8,
+      alignItems: "center",
+    },
+    collapsedText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontStyle: "italic",
     },
   });

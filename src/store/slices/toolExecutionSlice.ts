@@ -534,11 +534,15 @@ export const selectDraftsByAction = createSelector(
       action: ToolEndpointAction
     ) => action,
   ],
-  (drafts, action) => drafts.filter((te) => te.toolEndpointAction === action)
+  (drafts, action) =>
+    drafts.filter((te) => te.toolEndpointAction === action && !te.executedAt)
 );
 
 export const selectEmailDrafts = createSelector([selectDrafts], (drafts) =>
-  drafts.filter((te) => te.toolEndpointAction === ToolEndpointAction.GMAIL_SEND)
+  drafts.filter(
+    (te) =>
+      te.toolEndpointAction === ToolEndpointAction.GMAIL_SEND && !te.executedAt
+  )
 );
 
 export default toolExecutionSlice.reducer;

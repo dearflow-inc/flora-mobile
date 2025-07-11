@@ -32,6 +32,7 @@ export type AppStackParamList = {
   TodoDetail: { todoId: string };
   ToolExecution: { toolExecutionId: string };
   UserTaskDetail: { userTaskId: string };
+  EmailThreadDetail: { threadId: string };
 };
 
 export type MainTabParamList = {

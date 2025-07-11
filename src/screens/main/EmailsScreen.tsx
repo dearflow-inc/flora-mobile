@@ -43,7 +43,7 @@ import {
   ParameterType,
   ToolExecution,
 } from "@/types/toolExecution";
-import { UserTask } from "@/types/userTask";
+import { UserTask, UserTaskType } from "@/types/userTask";
 import { AuthorType, EmailLabel, EmailWithoutContent } from "@/types/email";
 
 // Components
@@ -117,6 +117,13 @@ export const EmailsScreen = () => {
     dispatch(fetchMyEmailsAsync());
     dispatch(fetchMyScenarios());
   }, []);
+
+  // Auto-select context view to null when inbox filter is selected
+  useEffect(() => {
+    if (activeFilter === "inbox") {
+      setSelectedContextViewId(null);
+    }
+  }, [activeFilter, setSelectedContextViewId]);
 
   // Fetch missing emails by IDs when user tasks reference emails that aren't in the store
   useEffect(() => {
@@ -220,6 +227,28 @@ export const EmailsScreen = () => {
   };
 
   const handleTaskPress = (task: UserTask) => {
+    // For completed tasks, check if it's email-related and not EMAIL_CLEAN_UP
+    if (activeFilter === "archived") {
+      const isEmailRelated = task.context.some((ctx) => ctx.type === "email");
+      const isEmailCleanUp = task.type === UserTaskType.EMAIL_CLEAN_UP;
+
+      if (isEmailRelated && !isEmailCleanUp) {
+        // Get the email from context to get the threadId
+        const emailContext = task.context.find((ctx) => ctx.type === "email");
+        const relatedEmail = emails.find(
+          (email) => email.id === emailContext?.emailId
+        );
+
+        if (relatedEmail?.threadId) {
+          navigation.navigate("EmailThreadDetail", {
+            threadId: relatedEmail.threadId,
+          });
+          return;
+        }
+      }
+    }
+
+    // Default navigation to UserTaskDetail
     navigation.navigate("UserTaskDetail", { userTaskId: task.id });
   };
 
@@ -329,6 +358,7 @@ export const EmailsScreen = () => {
       onPress={handleTaskPress}
       onDelete={handleDeleteTaskLocal}
       onArchive={handleArchiveTask}
+      activeFilter={activeFilter}
     />
   );
 
@@ -351,9 +381,15 @@ export const EmailsScreen = () => {
       swipeAnimation={getOrCreateSwipeAnimation(item.id)}
       onSwipeEvent={handleSwipeEvent}
       onPress={(email) => {
-        // Navigate to email detail or thread view
-        // For now, we'll just show an alert
-        Alert.alert("Email", `Subject: ${email.subject}`);
+        // Navigate to email thread if threadId exists
+        if (email.threadId) {
+          navigation.navigate("EmailThreadDetail", {
+            threadId: email.threadId,
+          });
+        } else {
+          // Fallback to alert if no threadId
+          Alert.alert("Email", `Subject: ${email.subject}`);
+        }
       }}
       onDelete={(emailId) => {
         // Handle email deletion
