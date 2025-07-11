@@ -251,6 +251,17 @@ export const EmailsScreen = () => {
     searchQuery
   );
 
+  // Calculate counts for sent and trashed emails
+  const sentEmailsCount = emails.filter(
+    (email) => email.from.type === AuthorType.PROFILE
+  ).length;
+
+  const trashedEmailsCount = emails.filter(
+    (email) =>
+      email.externalLabels?.includes(EmailLabel.TRASH) ||
+      email.status?.internalDeleted === true
+  ).length;
+
   // Filter emails for sent and trash filters
   const filteredEmails = emails
     .filter((email) => {
@@ -315,8 +326,6 @@ export const EmailsScreen = () => {
     <UserTaskItem
       task={item}
       emails={emails}
-      swipeAnimation={getOrCreateSwipeAnimation(item.id)}
-      onSwipeEvent={handleSwipeEvent}
       onPress={handleTaskPress}
       onDelete={handleDeleteTaskLocal}
       onArchive={handleArchiveTask}
@@ -524,6 +533,8 @@ export const EmailsScreen = () => {
         activeFilter={activeFilter}
         userTasks={userTasks}
         emailDraftsCount={drafts.length}
+        sentEmailsCount={sentEmailsCount}
+        trashedEmailsCount={trashedEmailsCount}
         onFilterSelect={handleFilterSelect}
         onClose={closeSidebar}
       />

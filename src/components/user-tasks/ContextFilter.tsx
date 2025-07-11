@@ -105,7 +105,7 @@ export const ContextFilter: React.FC<ContextFilterProps> = ({
           const isSelected = selectedContextViewId === item.id;
           return (
             <TouchableOpacity
-              key={item.id || "all"}
+              key={item.id || "important"}
               style={[
                 styles.contextChip,
                 isSelected

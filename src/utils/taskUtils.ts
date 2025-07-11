@@ -59,7 +59,9 @@ export const getFilteredUserTasks = (
   // Apply context view filter
   if (selectedContextViewId) {
     filteredTasks = filteredTasks.filter(
-      (task) => task.contextViewId === selectedContextViewId
+      (task) =>
+        selectedContextViewId === "all" ||
+        task.contextViewId === selectedContextViewId
     );
   } else {
     // When showing "All" tasks, filter out EMAIL_CLEAN_UP tasks
@@ -126,9 +128,9 @@ export const getFilterTitle = (filter: UserTaskFilter): string => {
     case "sent":
       return "Sent";
     case "snoozed":
-      return "Snoozed";
+      return "Planned / Snoozed";
     case "trash":
-      return "Trash";
+      return "Trashed";
     default:
       return "Inbox";
   }

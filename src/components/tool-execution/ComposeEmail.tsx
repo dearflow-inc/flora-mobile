@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Text,
+  useWindowDimensions,
 } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { useSelector, useDispatch } from "react-redux";
@@ -45,6 +46,8 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
   const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
   const { contacts } = useContacts();
+
+  const { width, height } = useWindowDimensions();
 
   // State management
   const [emailData, setEmailData] = useState<EmailDraftData>({
@@ -309,7 +312,10 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        style={styles.content}
+        style={[
+          styles.content,
+          { minHeight: height - 260, maxHeight: height - 260 },
+        ]}
         scrollEnabled={true}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={true}
@@ -354,6 +360,7 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
             onRemove={handleRemoveFollowUp}
           />
         )}
+        <View style={{ height: 150, backgroundColor: colors.background }} />
       </ScrollView>
 
       {/* Auto-save indicator - positioned at bottom */}

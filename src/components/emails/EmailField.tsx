@@ -136,8 +136,6 @@ export const EmailField: React.FC<EmailFieldProps> = ({
   };
 
   const handleKeyPress = (e: any) => {
-    console.log(e.nativeEvent.key);
-
     if (e.nativeEvent.key === "Enter") {
       e.preventDefault();
       // If dropdown is open and we have a first contact, select it
@@ -478,11 +476,13 @@ export const EmailField: React.FC<EmailFieldProps> = ({
           isExpanded &&
           !!bccInputValue &&
           bccInputValue.length >= 2)) && (
-        <TouchableOpacity
-          style={styles.dropdownOverlay}
-          activeOpacity={1}
-          onPress={handleCloseDropdown}
-        />
+        <View style={styles.dropdownOverlay} pointerEvents="box-none">
+          <TouchableOpacity
+            style={styles.dropdownOverlayTouchable}
+            activeOpacity={1}
+            onPress={handleCloseDropdown}
+          />
+        </View>
       )}
     </View>
   );
@@ -611,5 +611,13 @@ const createStyles = (colors: any) =>
       bottom: 0,
       backgroundColor: "transparent",
       zIndex: 10,
+    },
+    dropdownOverlayTouchable: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "transparent",
     },
   });

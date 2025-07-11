@@ -11,11 +11,10 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import {
   UserTaskFilter,
-  getFilterCount,
   getFilterTitle,
   getFilterIcon,
 } from "@/utils/taskUtils";
-import { UserTask } from "@/types/userTask";
+import { UserTask, UserTaskStatus } from "@/types/userTask";
 
 interface TaskSidebarProps {
   sidebarTranslateX: Animated.Value;
@@ -23,6 +22,8 @@ interface TaskSidebarProps {
   activeFilter: UserTaskFilter;
   userTasks: UserTask[];
   emailDraftsCount?: number;
+  sentEmailsCount?: number;
+  trashedEmailsCount?: number;
   onFilterSelect: (filter: UserTaskFilter) => void;
   onClose: () => void;
 }
@@ -33,6 +34,8 @@ export const TaskSidebar: React.FC<TaskSidebarProps> = ({
   activeFilter,
   userTasks,
   emailDraftsCount = 0,
+  sentEmailsCount = 0,
+  trashedEmailsCount = 0,
   onFilterSelect,
   onClose,
 }) => {
@@ -41,6 +44,42 @@ export const TaskSidebar: React.FC<TaskSidebarProps> = ({
   const styles = createStyles(colors);
 
   if (!sidebarVisible) return null;
+
+  // Calculate counts for user task filters
+  const inboxCount = userTasks.filter(
+    (task) =>
+      task.status === UserTaskStatus.PENDING ||
+      task.status === UserTaskStatus.FAILED
+  ).length;
+
+  const snoozedCount = userTasks.filter(
+    (task) => task.status === UserTaskStatus.SNOOZE
+  ).length;
+
+  const completedCount = userTasks.filter(
+    (task) =>
+      task.status === UserTaskStatus.COMPLETED ||
+      task.status === UserTaskStatus.COMPLETED_EXTERNAL
+  ).length;
+
+  const getFilterCount = (filter: UserTaskFilter): number | null => {
+    switch (filter) {
+      case "inbox":
+        return inboxCount;
+      case "snoozed":
+        return snoozedCount;
+      case "draft":
+        return emailDraftsCount;
+      case "sent":
+        return null;
+      case "archived":
+        return null;
+      case "trash":
+        return null;
+      default:
+        return 0;
+    }
+  };
 
   return (
     <Animated.View
@@ -71,10 +110,10 @@ export const TaskSidebar: React.FC<TaskSidebarProps> = ({
         {(
           [
             "inbox",
-            "archived",
+            "snoozed",
             "draft",
             "sent",
-            "snoozed",
+            "archived",
             "trash",
           ] as UserTaskFilter[]
         ).map((filter) => (
@@ -101,16 +140,16 @@ export const TaskSidebar: React.FC<TaskSidebarProps> = ({
             >
               {getFilterTitle(filter)}
             </Text>
-            <Text
-              style={[
-                styles.sidebarItemCount,
-                activeFilter === filter && styles.sidebarItemCountActive,
-              ]}
-            >
-              {filter === "draft"
-                ? emailDraftsCount
-                : getFilterCount(userTasks, filter)}
-            </Text>
+            {getFilterCount(filter) !== null && (
+              <Text
+                style={[
+                  styles.sidebarItemCount,
+                  activeFilter === filter && styles.sidebarItemCountActive,
+                ]}
+              >
+                {getFilterCount(filter)}
+              </Text>
+            )}
           </TouchableOpacity>
         ))}
       </View>

@@ -28,13 +28,6 @@ const SWIPE_THRESHOLD = screenWidth * 0.25;
 interface UserTaskItemProps {
   task: UserTask;
   emails: EmailWithoutContent[];
-  swipeAnimation: Animated.Value;
-  onSwipeEvent: (
-    taskId: string,
-    translationX: number,
-    velocityX: number,
-    state: State
-  ) => void;
   onPress: (task: UserTask) => void;
   onDelete?: (taskId: string) => void;
   onArchive?: (taskId: string) => void;
@@ -43,8 +36,6 @@ interface UserTaskItemProps {
 export const UserTaskItem: React.FC<UserTaskItemProps> = ({
   task,
   emails,
-  swipeAnimation,
-  onSwipeEvent,
   onPress,
   onDelete,
   onArchive,
@@ -70,7 +61,6 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
 
     if (state === State.ACTIVE) {
       translateX.setValue(translationX);
-
       // Show different backgrounds based on swipe direction
       if (translationX < 0) {
         // Left swipe - show delete background
@@ -179,7 +169,7 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
       <Animated.View
         style={[
           styles.swipeBackground,
-          styles.rightBackground,
+          styles.leftBackground,
           {
             opacity: leftBackgroundOpacity,
             backgroundColor: colors.danger,
@@ -196,7 +186,7 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
       <Animated.View
         style={[
           styles.swipeBackground,
-          styles.leftBackground,
+          styles.rightBackground,
           {
             opacity: rightBackgroundOpacity,
             backgroundColor: colors.success,
@@ -212,9 +202,9 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
       <PanGestureHandler
         onGestureEvent={onGestureEvent}
         onHandlerStateChange={onHandlerStateChange}
-        shouldCancelWhenOutside={true}
-        activeOffsetX={[-10, 10]}
-        failOffsetY={[-10, 10]}
+        shouldCancelWhenOutside={false}
+        activeOffsetX={[-5, 5]}
+        failOffsetY={[-20, 20]}
       >
         <Animated.View
           style={[
@@ -257,68 +247,32 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
                       isRead && styles.taskSenderRead,
                     ]}
                   >
-                    {senderInfo.name}
+                    {senderInfo.isFromEmail ? senderInfo.name : "Flora"}
                   </Text>
                   <Text style={styles.timestamp}>
                     {formatTimestamp(task.createdAt)}
                   </Text>
                 </View>
 
-                {/* Title */}
-                <Text
-                  style={[
-                    styles.subject,
-                    styles.taskTitle,
-                    isRead && styles.taskTitleRead,
-                  ]}
-                >
-                  {task.title || task.description}
+                {/* Task Title */}
+                <Text style={styles.subject} numberOfLines={2}>
+                  {task.title}
                 </Text>
 
-                {/* Description and Action Tags Row */}
-                <View
-                  style={[
-                    styles.descriptionRow,
-                    { maxWidth: width, overflow: "hidden" },
-                  ]}
-                >
-                  {task.title && (
-                    <Text
-                      style={[
-                        styles.preview,
-                        styles.descriptionText,
-                        isRead && styles.descriptionTextRead,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {senderInfo.previewText}
-                    </Text>
-                  )}
-                  {getTaskActions(task).length > 0 && (
-                    <View style={styles.actionChipsContainer}>
-                      {getTaskActions(task).map((action, index) => (
-                        <View
-                          key={index}
-                          style={[
-                            styles.actionChip,
-                            {
-                              backgroundColor: colors.primary + "15",
-                              borderColor: colors.primary + "40",
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.actionChipText,
-                              { color: colors.primary },
-                            ]}
-                          >
-                            {action}
-                          </Text>
-                        </View>
-                      ))}
+                {/* Task Description */}
+                {task.description && (
+                  <Text style={styles.preview} numberOfLines={2}>
+                    {task.description}
+                  </Text>
+                )}
+
+                {/* Task Actions */}
+                <View style={styles.taskActions}>
+                  {getTaskActions(task).map((action, index) => (
+                    <View key={index} style={styles.actionChip}>
+                      <Text style={styles.actionText}>{action}</Text>
                     </View>
-                  )}
+                  ))}
                 </View>
               </View>
             </View>
@@ -347,13 +301,13 @@ const createStyles = (colors: any) =>
     },
     leftBackground: {
       justifyContent: "center",
-      alignItems: "flex-start",
-      paddingLeft: 20,
+      alignItems: "flex-end",
+      paddingRight: 20,
     },
     rightBackground: {
       justifyContent: "center",
-      alignItems: "flex-end",
-      paddingRight: 20,
+      alignItems: "flex-start",
+      paddingLeft: 20,
     },
     swipeIndicatorCenter: {
       flexDirection: "row",
@@ -423,57 +377,33 @@ const createStyles = (colors: any) =>
     },
     subject: {
       fontSize: 14,
-      color: colors.text,
-      marginBottom: 3,
-    },
-    taskTitle: {
-      fontSize: 14,
-      fontWeight: "600",
+      fontWeight: "500",
       color: colors.text,
       marginBottom: 4,
     },
-    taskTitleRead: {
-      fontWeight: "400",
-      color: colors.textSecondary,
-    },
-    descriptionRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginTop: 2,
-      flex: 1,
-    },
-    descriptionText: {
-      flex: 1,
-      marginRight: 8,
-    },
-    descriptionTextRead: {
-      color: colors.textSecondary,
-    },
     preview: {
-      flex: 1,
-      fontSize: 13,
+      fontSize: 14,
       color: colors.textSecondary,
       lineHeight: 18,
-      marginBottom: 6,
+      marginBottom: 8,
     },
-    actionChipsContainer: {
+    taskActions: {
       flexDirection: "row",
-      flexWrap: "nowrap",
-      flexShrink: 0,
-      alignItems: "center",
-      marginLeft: "auto",
+      flexWrap: "wrap",
+      gap: 8,
     },
     actionChip: {
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 8,
-      borderWidth: 1,
-      marginRight: 3,
-      marginBottom: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary + "10",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      gap: 4,
     },
-    actionChipText: {
-      fontSize: 10,
-      fontWeight: "600",
-      textAlign: "center",
+    actionText: {
+      fontSize: 11,
+      color: colors.primary,
+      fontWeight: "500",
     },
   });

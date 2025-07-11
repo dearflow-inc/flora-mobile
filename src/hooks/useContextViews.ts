@@ -18,6 +18,7 @@ export const useContextViews = (contextViews: ContextView[]) => {
 
   const getContextViewList = () => {
     return [
+      { id: "all", name: "All", color: colors.primary },
       { id: null, name: "Important", color: colors.primary },
       ...(contextViews || [])
         .sort((a, b) => b.importance - a.importance)

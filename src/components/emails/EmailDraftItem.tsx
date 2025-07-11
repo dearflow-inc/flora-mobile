@@ -31,30 +31,21 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
 }) => {
   const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
+  const translateX = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+  const backgroundOpacity = useRef(new Animated.Value(0)).current;
+
   const styles = createStyles(colors);
-
-  // Animation refs
-  const translateX = useRef(new Animated.Value(0));
-  const opacity = useRef(new Animated.Value(1));
-  const leftBackgroundOpacity = useRef(new Animated.Value(0));
-  const rightBackgroundOpacity = useRef(new Animated.Value(0));
-
-  // Parse email draft data from tool execution
   const emailData = parseEmailDraftFromToolExecution(toolExecution);
 
-  // Get recipients for display
   const getRecipientsText = () => {
     const allRecipients = [...emailData.to, ...emailData.cc, ...emailData.bcc];
-
-    if (allRecipients.length === 0) {
-      return "No recipients";
-    }
+    if (allRecipients.length === 0) return "No recipients";
 
     const recipientEmails = allRecipients.map((r) => r.email);
     if (recipientEmails.length === 1) {
       return recipientEmails[0];
     }
-
     return `${recipientEmails[0]} +${recipientEmails.length - 1} more`;
   };
 
@@ -76,7 +67,7 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
     try {
       await dispatch(deleteToolExecutionAsync(toolExecution.id)).unwrap();
     } catch (error) {
-      console.error(error);
+      Alert.alert("Error", "Failed to delete draft. Please try again.");
     }
   };
 
@@ -84,12 +75,10 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
     const { translationX, state } = event.nativeEvent;
 
     if (state === State.ACTIVE) {
-      translateX.current.setValue(translationX);
-
-      // Show delete background for both left and right swipes
+      translateX.setValue(translationX);
+      // Show delete background when swiping
       const progress = Math.min(Math.abs(translationX) / SWIPE_THRESHOLD, 1);
-      leftBackgroundOpacity.current.setValue(progress * 0.8);
-      rightBackgroundOpacity.current.setValue(progress * 0.8);
+      backgroundOpacity.setValue(progress * 0.8);
     }
   };
 
@@ -101,12 +90,17 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
         console.log("Deleting tool execution", toolExecution.id);
         // Swipe threshold reached, delete the draft
         Animated.parallel([
-          Animated.timing(translateX.current, {
+          Animated.timing(translateX, {
             toValue: translationX > 0 ? screenWidth : -screenWidth,
             duration: 200,
             useNativeDriver: true,
           }),
-          Animated.timing(opacity.current, {
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(backgroundOpacity, {
             toValue: 0,
             duration: 200,
             useNativeDriver: true,
@@ -118,43 +112,31 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
           }, 0);
         });
       } else {
-        // Reset position
-        Animated.spring(translateX.current, {
-          toValue: 0,
-          useNativeDriver: true,
-        }).start();
-        leftBackgroundOpacity.current.setValue(0);
-        rightBackgroundOpacity.current.setValue(0);
+        // Snap back to original position
+        Animated.parallel([
+          Animated.timing(translateX, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(backgroundOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
       }
     }
   };
 
   return (
     <View style={styles.draftItemContainer}>
-      {/* Delete background for left swipe */}
+      {/* Delete background shown when swiping */}
       <Animated.View
         style={[
           styles.swipeBackground,
-          styles.leftSwipeBackground,
           {
-            opacity: leftBackgroundOpacity.current,
-            backgroundColor: colors.danger,
-          },
-        ]}
-      >
-        <View style={styles.swipeIndicatorCenter}>
-          <MaterialIcons name="delete" size={24} color="white" />
-          <Text style={styles.swipeText}>Delete</Text>
-        </View>
-      </Animated.View>
-
-      {/* Delete background for right swipe */}
-      <Animated.View
-        style={[
-          styles.swipeBackground,
-          styles.rightSwipeBackground,
-          {
-            opacity: rightBackgroundOpacity.current,
+            opacity: backgroundOpacity,
             backgroundColor: colors.danger,
           },
         ]}
@@ -168,16 +150,16 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
       <PanGestureHandler
         onGestureEvent={onGestureEvent}
         onHandlerStateChange={onHandlerStateChange}
-        shouldCancelWhenOutside={true}
-        activeOffsetX={[-10, 10]}
-        failOffsetY={[-10, 10]}
+        shouldCancelWhenOutside={false}
+        activeOffsetX={[-5, 5]}
+        failOffsetY={[-20, 20]}
       >
         <Animated.View
           style={[
             styles.draftItem,
             {
-              transform: [{ translateX: translateX.current }],
-              opacity: opacity.current,
+              transform: [{ translateX }],
+              opacity,
             },
           ]}
         >
@@ -243,6 +225,8 @@ const createStyles = (colors: any) =>
       borderBottomColor: colors.border,
       paddingHorizontal: 16,
       paddingVertical: 12,
+      position: "relative",
+      zIndex: 2,
     },
     draftTouchable: {
       flex: 1,
@@ -288,26 +272,22 @@ const createStyles = (colors: any) =>
     swipeBackground: {
       position: "absolute",
       top: 0,
+      left: 0,
+      right: 0,
       bottom: 0,
-      width: "100%",
       justifyContent: "center",
       alignItems: "center",
       zIndex: 1,
     },
-    leftSwipeBackground: {
-      left: 0,
-    },
-    rightSwipeBackground: {
-      right: 0,
-    },
     swipeIndicatorCenter: {
+      flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
+      gap: 8,
     },
     swipeText: {
-      color: "white",
-      fontSize: 14,
+      fontSize: 16,
       fontWeight: "600",
-      marginTop: 4,
+      color: "white",
     },
   });

@@ -41,8 +41,7 @@ export const EmailItem: React.FC<EmailItemProps> = ({
   const { colors } = useTheme();
   const translateX = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
-  const leftBackgroundOpacity = useRef(new Animated.Value(0)).current;
-  const rightBackgroundOpacity = useRef(new Animated.Value(0)).current;
+  const backgroundOpacity = useRef(new Animated.Value(0)).current;
 
   const styles = createStyles(colors);
 
@@ -96,22 +95,9 @@ export const EmailItem: React.FC<EmailItemProps> = ({
 
     if (state === State.ACTIVE) {
       translateX.setValue(translationX);
-
-      // Show different backgrounds based on swipe direction
-      if (translationX < 0) {
-        // Left swipe - show delete background
-        const progress = Math.min(Math.abs(translationX) / SWIPE_THRESHOLD, 1);
-        leftBackgroundOpacity.setValue(progress * 0.8);
-        rightBackgroundOpacity.setValue(0);
-      } else if (translationX > 0) {
-        // Right swipe - show archive background
-        const progress = Math.min(Math.abs(translationX) / SWIPE_THRESHOLD, 1);
-        rightBackgroundOpacity.setValue(progress * 0.8);
-        leftBackgroundOpacity.setValue(0);
-      } else {
-        leftBackgroundOpacity.setValue(0);
-        rightBackgroundOpacity.setValue(0);
-      }
+      // Show background when swiping
+      const progress = Math.min(Math.abs(translationX) / SWIPE_THRESHOLD, 1);
+      backgroundOpacity.setValue(progress * 0.8);
     }
   };
 
@@ -139,12 +125,7 @@ export const EmailItem: React.FC<EmailItemProps> = ({
           duration: 200,
           useNativeDriver: true,
         }),
-        Animated.timing(leftBackgroundOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(rightBackgroundOpacity, {
+        Animated.timing(backgroundOpacity, {
           toValue: 0,
           duration: 200,
           useNativeDriver: true,
@@ -159,13 +140,12 @@ export const EmailItem: React.FC<EmailItemProps> = ({
 
   return (
     <View style={styles.emailContainer}>
-      {/* Swipe backgrounds */}
+      {/* Swipe background shown when swiping */}
       <Animated.View
         style={[
           styles.swipeBackground,
-          styles.leftBackground,
           {
-            opacity: leftBackgroundOpacity,
+            opacity: backgroundOpacity,
             backgroundColor: colors.danger,
           },
         ]}
@@ -176,28 +156,12 @@ export const EmailItem: React.FC<EmailItemProps> = ({
         </View>
       </Animated.View>
 
-      <Animated.View
-        style={[
-          styles.swipeBackground,
-          styles.rightBackground,
-          {
-            opacity: rightBackgroundOpacity,
-            backgroundColor: colors.success,
-          },
-        ]}
-      >
-        <View style={styles.swipeIndicatorCenter}>
-          <MaterialIcons name="archive" size={24} color="white" />
-          <Text style={styles.swipeText}>Archive</Text>
-        </View>
-      </Animated.View>
-
       <PanGestureHandler
         onGestureEvent={onGestureEvent}
         onHandlerStateChange={onHandlerStateChange}
-        shouldCancelWhenOutside={true}
-        activeOffsetX={[-10, 10]}
-        failOffsetY={[-10, 10]}
+        shouldCancelWhenOutside={false}
+        activeOffsetX={[-5, 5]}
+        failOffsetY={[-20, 20]}
       >
         <Animated.View
           style={[
@@ -289,16 +253,6 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       zIndex: 1,
     },
-    leftBackground: {
-      justifyContent: "center",
-      alignItems: "flex-start",
-      paddingLeft: 20,
-    },
-    rightBackground: {
-      justifyContent: "center",
-      alignItems: "flex-end",
-      paddingRight: 20,
-    },
     swipeIndicatorCenter: {
       flexDirection: "row",
       alignItems: "center",
@@ -372,11 +326,10 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       marginTop: 4,
-      gap: 4,
     },
     outgoingText: {
-      fontSize: 11,
+      fontSize: 12,
       color: colors.primary,
-      fontWeight: "500",
+      marginLeft: 4,
     },
   });

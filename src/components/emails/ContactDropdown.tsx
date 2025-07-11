@@ -114,14 +114,31 @@ export const ContactDropdown: React.FC<ContactDropdownProps> = ({
         return;
       }
 
+      const firstName =
+        newContactName.trim().split(" ")[0]?.replace("undefined", "") ||
+        undefined;
+      const lastName =
+        newContactName
+          .trim()
+          .split(" ")
+          ?.slice(1)
+          ?.join(" ")
+          ?.replace("undefined", "") || undefined;
+
       const contactData = {
+        firstName: firstName,
+        lastName: lastName,
         emailAddresses: [
           {
-            name: newContactName.trim() || searchTerm.split("@")[0],
+            name:
+              firstName || lastName
+                ? `${firstName || ""} ${lastName || ""}`.trim()
+                : searchTerm.split("@")[0],
             address: searchTerm.trim(),
             primary: true,
           },
         ],
+        phoneNumbers: [],
       };
 
       const newContact = await createContact(contactData).unwrap();
@@ -133,6 +150,7 @@ export const ContactDropdown: React.FC<ContactDropdownProps> = ({
       onClose();
       setNewContactName("");
     } catch (error: any) {
+      console.log(error);
       Alert.alert("Error", error.message || "Failed to create contact");
     } finally {
       setIsCreatingContact(false);
@@ -230,6 +248,7 @@ export const ContactDropdown: React.FC<ContactDropdownProps> = ({
               value={newContactName}
               onChangeText={setNewContactName}
               autoCapitalize="words"
+              onSubmitEditing={handleCreateContact}
             />
             <TouchableOpacity
               style={[
