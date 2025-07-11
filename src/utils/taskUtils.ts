@@ -4,6 +4,7 @@ import { EmailWithoutContent } from "@/types/email";
 export type UserTaskFilter =
   | "inbox"
   | "archived"
+  | "draft"
   | "sent"
   | "snoozed"
   | "trash";
@@ -96,6 +97,9 @@ export const getFilterCount = (
           task.status === UserTaskStatus.COMPLETED ||
           task.status === UserTaskStatus.COMPLETED_EXTERNAL
       ).length;
+    case "draft":
+      // This will be handled separately in the component since it's not user tasks
+      return 0;
     case "sent":
       return userTasks.filter(
         (task) => task.status === UserTaskStatus.COMPLETED_EXTERNAL
@@ -114,9 +118,11 @@ export const getFilterCount = (
 export const getFilterTitle = (filter: UserTaskFilter): string => {
   switch (filter) {
     case "inbox":
-      return "Incomplete & Actionable";
+      return "Inbox";
     case "archived":
-      return "Archived & Completed";
+      return "Completed";
+    case "draft":
+      return "Drafts";
     case "sent":
       return "Sent";
     case "snoozed":
@@ -134,6 +140,8 @@ export const getFilterIcon = (filter: UserTaskFilter): string => {
       return "inbox";
     case "archived":
       return "archive";
+    case "draft":
+      return "drafts";
     case "sent":
       return "send";
     case "snoozed":
@@ -228,30 +236,32 @@ export const getEmailSenderInfo = (
 export const getTaskActions = (task: UserTask): string[] => {
   // Get actions from the task's actions array
   const actions =
-    task.actions?.map((action) => {
-      // Convert action type to readable format
-      switch (action.type) {
-        case UserTaskType.EMAIL_READ:
-          return "Read";
-        case UserTaskType.EMAIL_REPLY:
-          return "Reply";
-        case UserTaskType.EMAIL_FOLLOW_UP:
-          return "Follow Up";
-        case UserTaskType.EMAIL_SCHEDULER:
-          return "Schedule";
-        case UserTaskType.EMAIL_SEND:
-          return "Send";
-        case UserTaskType.EMAIL_CLEAN_UP:
-          return "Clean Up";
-        case UserTaskType.CONTACT_EMAIL_ADDRESS_UNSUBSCRIBE:
-          return "Unsubscribe";
-        default:
-          // Remove underscores and capitalize
-          return action.type
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (l) => l.toUpperCase());
-      }
-    }) || [];
+    task.actions
+      .filter((action) => action.status === UserTaskStatus.PENDING)
+      ?.map((action) => {
+        // Convert action type to readable format
+        switch (action.type) {
+          case UserTaskType.EMAIL_READ:
+            return "Read";
+          case UserTaskType.EMAIL_REPLY:
+            return "Reply";
+          case UserTaskType.EMAIL_FOLLOW_UP:
+            return "Follow Up";
+          case UserTaskType.EMAIL_SCHEDULER:
+            return "Schedule";
+          case UserTaskType.EMAIL_SEND:
+            return "Send";
+          case UserTaskType.EMAIL_CLEAN_UP:
+            return "Clean Up";
+          case UserTaskType.CONTACT_EMAIL_ADDRESS_UNSUBSCRIBE:
+            return "Unsubscribe";
+          default:
+            // Remove underscores and capitalize
+            return action.type
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+        }
+      }) || [];
 
   // If no actions are defined, default to "Read"
   return actions.length > 0 ? actions : ["Read"];

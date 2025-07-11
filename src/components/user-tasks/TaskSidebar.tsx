@@ -22,6 +22,7 @@ interface TaskSidebarProps {
   sidebarVisible: boolean;
   activeFilter: UserTaskFilter;
   userTasks: UserTask[];
+  emailDraftsCount?: number;
   onFilterSelect: (filter: UserTaskFilter) => void;
   onClose: () => void;
 }
@@ -31,6 +32,7 @@ export const TaskSidebar: React.FC<TaskSidebarProps> = ({
   sidebarVisible,
   activeFilter,
   userTasks,
+  emailDraftsCount = 0,
   onFilterSelect,
   onClose,
 }) => {
@@ -67,7 +69,14 @@ export const TaskSidebar: React.FC<TaskSidebarProps> = ({
 
       <View style={styles.sidebarContent}>
         {(
-          ["inbox", "archived", "sent", "snoozed", "trash"] as UserTaskFilter[]
+          [
+            "inbox",
+            "archived",
+            "draft",
+            "sent",
+            "snoozed",
+            "trash",
+          ] as UserTaskFilter[]
         ).map((filter) => (
           <TouchableOpacity
             key={filter}
@@ -98,7 +107,9 @@ export const TaskSidebar: React.FC<TaskSidebarProps> = ({
                 activeFilter === filter && styles.sidebarItemCountActive,
               ]}
             >
-              {getFilterCount(userTasks, filter)}
+              {filter === "draft"
+                ? emailDraftsCount
+                : getFilterCount(userTasks, filter)}
             </Text>
           </TouchableOpacity>
         ))}

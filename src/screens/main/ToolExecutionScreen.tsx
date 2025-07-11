@@ -14,7 +14,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
 import { fetchToolExecutionByIdAsync } from "@/store/slices/toolExecutionSlice";
 import { ToolEndpointAction } from "@/types/toolExecution";
-import { ComposeEmail } from "./components/ComposeEmail";
+import { ComposeEmail } from "../../components/tool-execution/ComposeEmail";
 
 type ToolExecutionScreenParams = {
   toolExecutionId: string;
@@ -133,6 +133,7 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
+
       backgroundColor: colors.background,
     },
     loadingContainer: {

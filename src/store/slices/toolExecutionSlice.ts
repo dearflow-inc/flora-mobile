@@ -154,13 +154,22 @@ export const unscheduleToolExecutionAsync = createAsyncThunk<
   }
 });
 
+let deletingToolExecutionIds: string[] = [];
 export const deleteToolExecutionAsync = createAsyncThunk<
   string,
   string,
   { rejectValue: string }
 >("toolExecutions/delete", async (toolExecutionId, { rejectWithValue }) => {
   try {
+    if (deletingToolExecutionIds.includes(toolExecutionId)) {
+      return toolExecutionId;
+    }
+
+    deletingToolExecutionIds.push(toolExecutionId);
     await toolExecutionService.deleteToolExecution(toolExecutionId);
+    deletingToolExecutionIds = deletingToolExecutionIds.filter(
+      (id) => id !== toolExecutionId
+    );
     return toolExecutionId;
   } catch (error: any) {
     return rejectWithValue(error.message || "Failed to delete tool execution");
@@ -276,10 +285,18 @@ export const toolExecutionSlice = createSlice({
       .addCase(createToolExecutionAsync.fulfilled, (state, action) => {
         state.isCreating = false;
         const toolExecution = action.payload;
+
+        state.drafts = state.drafts.filter((te) => te.id !== toolExecution.id);
+
         state.toolExecutions.unshift(toolExecution);
 
-        // Add to drafts if not executed
         if (!toolExecution.executedAt) {
+          // Remove from drafts if it exists
+          state.drafts = state.drafts.filter(
+            (te) => te.id !== toolExecution.id
+          );
+
+          // Add to drafts if not executed
           state.drafts.unshift(toolExecution);
         }
 

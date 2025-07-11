@@ -19,6 +19,7 @@ import emailSlice from "./slices/emailSlice";
 import toolExecutionSlice from "./slices/toolExecutionSlice";
 import userTaskSlice from "./slices/userTaskSlice";
 import scenariosSlice from "./slices/scenariosSlice";
+import contactSlice from "./slices/contactSlice";
 
 const persistConfig = {
   key: "root",
@@ -36,6 +37,7 @@ const rootReducer = combineReducers({
   toolExecutions: toolExecutionSlice,
   userTasks: userTaskSlice,
   scenarios: scenariosSlice,
+  contacts: contactSlice,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

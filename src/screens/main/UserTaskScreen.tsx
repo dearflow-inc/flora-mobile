@@ -78,7 +78,7 @@ export const UserTaskScreen = () => {
     videos?: any[];
   }>({});
 
-  const { isLoading, error, isCreating } = useSelector(
+  const { isLoading, isCreating } = useSelector(
     (state: RootState) => state.userTasks
   );
   const userTasks = useSelector(selectUserTasks);
@@ -551,14 +551,14 @@ export const UserTaskScreen = () => {
     );
   }
 
-  if (error || !userTask) {
+  if (!userTask) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <MaterialIcons name="error" size={48} color={colors.danger} />
           <Text style={styles.errorTitle}>Task Not Found</Text>
           <Text style={styles.errorText}>
-            {error || "The requested task could not be found."}
+            {"The requested task could not be found."}
           </Text>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Text style={styles.backButtonText}>Go Back</Text>
@@ -576,16 +576,6 @@ export const UserTaskScreen = () => {
           <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerRight}>
-          {/*   <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleToggleStar}
-          >
-            <MaterialIcons
-              name={userTask?.importance === 1 ? "star" : "star-outline"}
-              size={24}
-              color={userTask?.importance === 1 ? colors.warning : colors.text}
-            />
-          </TouchableOpacity> */}
           <TouchableOpacity style={styles.headerButton} onPress={handleArchive}>
             <MaterialIcons name="archive" size={24} color={colors.text} />
           </TouchableOpacity>

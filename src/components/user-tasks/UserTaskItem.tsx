@@ -212,6 +212,9 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
       <PanGestureHandler
         onGestureEvent={onGestureEvent}
         onHandlerStateChange={onHandlerStateChange}
+        shouldCancelWhenOutside={true}
+        activeOffsetX={[-10, 10]}
+        failOffsetY={[-10, 10]}
       >
         <Animated.View
           style={[

@@ -14,6 +14,8 @@ import { emailService } from "@/services/emailService";
 import { toolExecutionService } from "@/services/toolExecutionService";
 import { userTaskService } from "@/services/userTaskService";
 import { scenariosService } from "@/services/scenariosService";
+import { regenerateTextService } from "@/services/regenerateTextService";
+import { contactService } from "@/services/contactService";
 import { secureStorage } from "@/services/secureStorage";
 import { clearAllProfileData } from "./profileSlice";
 
@@ -80,6 +82,8 @@ export const signOutAsync = createAsyncThunk(
       toolExecutionService.removeAuthToken();
       userTaskService.removeAuthToken();
       scenariosService.removeAuthToken();
+      regenerateTextService.removeAuthToken();
+      contactService.removeAuthToken();
 
       // Clear profile data
       dispatch(clearAllProfileData());
@@ -127,6 +131,13 @@ export const checkAuthAsync = createAsyncThunk(
       // Set the tokens in the service for API calls
       authService.setAuthToken(authToken, refreshToken);
       todoService.setAuthToken(authToken, refreshToken);
+      profileService.setAuthToken(authToken, refreshToken);
+      emailService.setAuthToken(authToken, refreshToken);
+      toolExecutionService.setAuthToken(authToken, refreshToken);
+      userTaskService.setAuthToken(authToken);
+      scenariosService.setAuthToken(authToken, refreshToken);
+      regenerateTextService.setAuthToken(authToken, refreshToken);
+      contactService.setAuthToken(authToken, refreshToken);
 
       // Try to refresh authentication to validate the token
       const response = await authService.refreshAuthentication();
@@ -263,6 +274,14 @@ export const authSlice = createSlice({
           action.payload.authToken,
           action.payload.refreshToken
         );
+        regenerateTextService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        contactService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
       })
       .addCase(signInAsync.rejected, (state, action) => {
         state.isLoading = false;
@@ -319,6 +338,14 @@ export const authSlice = createSlice({
           `JWT ${action.payload.authToken};;;;;${action.payload.refreshToken}`
         );
         scenariosService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        regenerateTextService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        contactService.setAuthToken(
           action.payload.authToken,
           action.payload.refreshToken
         );
@@ -396,6 +423,14 @@ export const authSlice = createSlice({
           action.payload.authToken,
           action.payload.refreshToken
         );
+        regenerateTextService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        contactService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
       })
       .addCase(refreshAuthAsync.rejected, (state) => {
         state.user = null;
@@ -454,6 +489,14 @@ export const authSlice = createSlice({
           `JWT ${action.payload.authToken};;;;;${action.payload.refreshToken}`
         );
         scenariosService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        regenerateTextService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        contactService.setAuthToken(
           action.payload.authToken,
           action.payload.refreshToken
         );
