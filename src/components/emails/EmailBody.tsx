@@ -1,11 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
-import { View, StyleSheet, TextInput, Keyboard, Text } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
-import {
-  RichEditor,
-  RichToolbar,
-  actions,
-} from "react-native-pell-rich-editor";
+import React, { useEffect, useRef, useState } from "react";
+import { Keyboard, StyleSheet, TextInput, View } from "react-native";
+import { RichEditor } from "react-native-pell-rich-editor";
 
 interface EmailBodyProps {
   subject: string;
@@ -116,6 +112,11 @@ export const EmailBody: React.FC<EmailBodyProps> = ({
           editorStyle={{
             backgroundColor: colors.background,
             color: colors.text,
+            contentCSSText: `
+              p { margin: 0; padding: 0; }
+              div { margin: 0; padding: 0; }
+              br { margin: 0; padding: 0; }
+            `,
           }}
           onFocus={() => setIsEditing(true)}
           onBlur={() => {
