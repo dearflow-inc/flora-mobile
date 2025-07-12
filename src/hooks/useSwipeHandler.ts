@@ -1,14 +1,16 @@
-import { useState, useRef } from "react";
-import { Animated, Alert } from "react-native";
-import { State } from "react-native-gesture-handler";
-import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store";
 import {
-  deleteUserTaskAsync,
   completeUserTaskAsync,
+  deleteUserTaskAsync,
+  optimisticallyRemoveUserTask,
+  restoreUserTask,
 } from "@/store/slices/userTaskSlice";
-import { actionsByUserTaskType } from "@/utils/userTaskActions";
 import { UserTask } from "@/types/userTask";
+import { actionsByUserTaskType } from "@/utils/userTaskActions";
+import { useRef, useState } from "react";
+import { Alert, Animated } from "react-native";
+import { State } from "react-native-gesture-handler";
+import { useDispatch } from "react-redux";
 
 export const useSwipeHandler = () => {
   const [swipedTaskId, setSwipedTaskId] = useState<string | null>(null);
@@ -98,6 +100,10 @@ export const useSwipeHandler = () => {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
+      // Optimistically remove the task from the store immediately
+      dispatch(optimisticallyRemoveUserTask(taskId));
+
+      // Then make the API call
       await dispatch(deleteUserTaskAsync(taskId)).unwrap();
 
       // Animate out
@@ -110,6 +116,9 @@ export const useSwipeHandler = () => {
         setSwipedTaskId(null);
       });
     } catch (error) {
+      // If the API call fails, restore the task
+      dispatch(restoreUserTask(taskId));
+
       // Reset animation on error
       const animation = getOrCreateSwipeAnimation(taskId);
       Animated.timing(animation, {

@@ -1,10 +1,10 @@
-import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
+import { API_CONFIG } from "@/config/api";
+import { fetchWithDelay } from "@/utils/apiInterceptor";
 import Constants from "expo-constants";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { secureStorage } from "./secureStorage";
-import { API_CONFIG } from "@/config/api";
-import { ChatScreen } from "@/screens/main/ChatScreen";
 
 // Define notification types for conditional display
 export enum SendMobileNotificationAction {
@@ -243,7 +243,7 @@ class NotificationService {
     try {
       const headers = await this.getAuthHeaders();
 
-      const response = await fetch(`${this.baseURL}/my/push-tokens`, {
+      const response = await fetchWithDelay(`${this.baseURL}/my/push-tokens`, {
         method: "POST",
         headers,
         body: JSON.stringify(deviceInfo),

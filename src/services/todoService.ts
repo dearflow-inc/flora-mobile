@@ -1,23 +1,19 @@
-import axios, { AxiosInstance } from "axios";
+import { createApiInstance } from "@/config/api";
 import {
-  Todo,
   CreateTodoRequest,
+  Todo,
+  TodoSortBy,
+  TodosResponse,
   UpdateTodoRequest,
   UpdateTodoStateRequest,
-  TodosResponse,
-  TodoSortBy,
 } from "@/types/todo";
-import { API_CONFIG } from "@/config/api";
+import { AxiosInstance } from "axios";
 
 class TodoService {
   private api: AxiosInstance;
 
   constructor() {
-    this.api = axios.create({
-      baseURL: API_CONFIG.API_BASE_URL,
-      timeout: API_CONFIG.TIMEOUT,
-      headers: API_CONFIG.HEADERS,
-    });
+    this.api = createApiInstance();
 
     // Add request interceptor to include auth token
     this.api.interceptors.request.use(

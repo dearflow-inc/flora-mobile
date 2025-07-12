@@ -193,104 +193,101 @@ export const EmailItem: React.FC<EmailItemProps> = ({
         </View>
       </Animated.View>
 
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-        shouldCancelWhenOutside={false}
-        activeOffsetX={[-5, 5]}
-        failOffsetY={[-20, 20]}
-        enabled={onDelete !== undefined || onArchive !== undefined}
+      <Animated.View
+        style={[
+          styles.emailItem,
+          {
+            transform: [{ translateX }],
+            opacity,
+          },
+        ]}
       >
-        <Animated.View
-          style={[
-            styles.emailItem,
-            {
-              transform: [{ translateX }],
-              opacity,
-            },
-          ]}
+        {/* Invisible gesture overlay - only covers right side */}
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+          shouldCancelWhenOutside={false}
+          activeOffsetX={[-5, 5]}
+          failOffsetY={[-20, 20]}
+          enabled={onDelete !== undefined || onArchive !== undefined}
         >
-          <TouchableOpacity
-            style={styles.emailTouchable}
-            onPress={() => onPress(email)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.gmailLayout}>
-              {/* Avatar Column */}
-              <View style={styles.avatarColumn}>
-                <CustomAvatar
-                  src={
-                    email.from.type === AuthorType.PROFILE
-                      ? getContactAvatar(email.from.externalId)
-                      : getSenderInfo().avatar
-                  }
-                  alt={
-                    email.from.type === AuthorType.PROFILE
-                      ? getContactName(email.to[0].externalId)
-                      : senderInfo.name
-                  }
-                  size={40}
-                />
-              </View>
-
-              {/* Content Column */}
-              <View style={styles.contentColumn}>
-                <View style={styles.nameRow}>
-                  <Text style={styles.sender} numberOfLines={1}>
-                    {email.from.type === AuthorType.PROFILE
-                      ? `To: ${email.to
-                          .map((t) => {
-                            let res;
-                            if (t.type === AuthorType.CONTACT) {
-                              const contactName = getContactName(t.externalId);
-
-                              res =
-                                contactName || t.meta?.name || t.meta?.email;
-                            } else {
-                              res = t.meta?.name || t.meta?.email;
-                            }
-
-                            return res?.replaceAll("undefined", "").trim();
-                          })
-                          .join(", ")}`
-                      : senderInfo.name}
-                  </Text>
-                  <Text style={styles.timestamp}>
-                    {formatTimestamp(email.sent)}
-                  </Text>
-                </View>
-
-                <Text style={styles.subject} numberOfLines={1}>
-                  {email.subject || "No subject"}
-                </Text>
-
-                {email.isOutgoing && (
-                  <Text style={styles.recipients} numberOfLines={1}>
-                    To: {getRecipientsText()}
-                  </Text>
-                )}
-
-                {email.previewText && (
-                  <Text style={styles.preview} numberOfLines={2}>
-                    {email.previewText}
-                  </Text>
-                )}
-
-                {email.isOutgoing && (
-                  <View style={styles.outgoingIndicator}>
-                    <MaterialIcons
-                      name="send"
-                      size={14}
-                      color={colors.primary}
-                    />
-                    <Text style={styles.outgoingText}>Sent</Text>
-                  </View>
-                )}
-              </View>
+          <View style={styles.gestureOverlay} />
+        </PanGestureHandler>
+        <TouchableOpacity
+          style={styles.emailTouchable}
+          onPress={() => onPress(email)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.gmailLayout}>
+            {/* Avatar Column */}
+            <View style={styles.avatarColumn}>
+              <CustomAvatar
+                src={
+                  email.from.type === AuthorType.PROFILE
+                    ? getContactAvatar(email.from.externalId)
+                    : getSenderInfo().avatar
+                }
+                alt={
+                  email.from.type === AuthorType.PROFILE
+                    ? getContactName(email.to[0].externalId)
+                    : senderInfo.name
+                }
+                size={40}
+              />
             </View>
-          </TouchableOpacity>
-        </Animated.View>
-      </PanGestureHandler>
+
+            {/* Content Column */}
+            <View style={styles.contentColumn}>
+              <View style={styles.nameRow}>
+                <Text style={styles.sender} numberOfLines={1}>
+                  {email.from.type === AuthorType.PROFILE
+                    ? `To: ${email.to
+                        .map((t) => {
+                          let res;
+                          if (t.type === AuthorType.CONTACT) {
+                            const contactName = getContactName(t.externalId);
+
+                            res = contactName || t.meta?.name || t.meta?.email;
+                          } else {
+                            res = t.meta?.name || t.meta?.email;
+                          }
+
+                          return res?.replaceAll("undefined", "").trim();
+                        })
+                        .join(", ")}`
+                    : senderInfo.name}
+                </Text>
+                <Text style={styles.timestamp}>
+                  {formatTimestamp(email.sent)}
+                </Text>
+              </View>
+
+              <Text style={styles.subject} numberOfLines={1}>
+                {email.subject || "No subject"}
+              </Text>
+
+              {email.isOutgoing && (
+                <Text style={styles.recipients} numberOfLines={1}>
+                  To: {getRecipientsText()}
+                </Text>
+              )}
+
+              {email.previewText && (
+                <Text style={styles.preview} numberOfLines={2}>
+                  {email.previewText}
+                </Text>
+              )}
+
+              {email.isOutgoing && (
+                <View style={styles.outgoingIndicator}>
+                  <MaterialIcons name="send" size={14} color={colors.primary} />
+                  <Text style={styles.outgoingText}>Sent</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 };
@@ -300,6 +297,15 @@ const createStyles = (colors: any) =>
     emailContainer: {
       position: "relative",
       overflow: "hidden",
+    },
+    gestureOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 30,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "transparent",
+      zIndex: 10,
     },
     swipeBackground: {
       position: "absolute",

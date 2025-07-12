@@ -1,5 +1,6 @@
 import { CustomAvatar } from "@/components/ui/CustomAvatar";
 import { useTheme } from "@/hooks/useTheme";
+import { RootState } from "@/store";
 import { EmailLabel, EmailWithoutContent } from "@/types/email";
 import { UserTask } from "@/types/userTask";
 import {
@@ -10,7 +11,7 @@ import {
   UserTaskFilter,
 } from "@/utils/taskUtils";
 import { MaterialIcons } from "@expo/vector-icons";
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Animated,
   Dimensions,
@@ -21,6 +22,7 @@ import {
   View,
 } from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
+import { useSelector } from "react-redux";
 
 const { width: screenWidth } = Dimensions.get("window");
 const SWIPE_THRESHOLD = screenWidth * 0.25;
@@ -49,6 +51,12 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
   const leftBackgroundOpacity = useRef(new Animated.Value(0)).current;
   const rightBackgroundOpacity = useRef(new Animated.Value(0)).current;
 
+  // Get userTasks from store to detect when this task is removed
+  const userTasks = useSelector(
+    (state: RootState) => state.userTasks.userTasks
+  );
+  const isTaskInStore = userTasks.some((t) => t.id === task.id);
+
   const styles = createStyles(colors);
   const senderInfo = getEmailSenderInfo(task, emails);
 
@@ -60,6 +68,23 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
 
   // Check if this is a completed task (archived filter)
   const isCompletedTask = activeFilter === "archived";
+
+  // Reset animation values when task is removed from store
+  useEffect(() => {
+    if (!isTaskInStore) {
+      // Task was removed from store, reset animation values
+      translateX.setValue(0);
+      opacity.setValue(1);
+      leftBackgroundOpacity.setValue(0);
+      rightBackgroundOpacity.setValue(0);
+    }
+  }, [
+    isTaskInStore,
+    translateX,
+    opacity,
+    leftBackgroundOpacity,
+    rightBackgroundOpacity,
+  ]);
 
   const onGestureEvent = (event: any) => {
     // Disable swipe functionality for completed tasks
@@ -214,84 +239,86 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
         </Animated.View>
       )}
 
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-        shouldCancelWhenOutside={false}
-        activeOffsetX={[-5, 5]}
-        failOffsetY={[-20, 20]}
-        enabled={!isCompletedTask}
+      <Animated.View
+        style={[
+          styles.emailItem,
+          styles.taskItem,
+          {
+            transform: [{ translateX }],
+            opacity,
+            borderLeftColor: isRead ? colors.primary + "40" : colors.primary,
+          },
+        ]}
       >
-        <Animated.View
-          style={[
-            styles.emailItem,
-            styles.taskItem,
-            {
-              transform: [{ translateX }],
-              opacity,
-              borderLeftColor: isRead ? colors.primary + "40" : colors.primary,
-            },
-          ]}
+        {/* Invisible gesture overlay - only covers right side */}
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+          shouldCancelWhenOutside={false}
+          activeOffsetX={[-5, 5]}
+          failOffsetY={[-20, 20]}
+          enabled={!isCompletedTask}
         >
-          <TouchableOpacity
-            style={styles.taskTouchable}
-            onPress={() => onPress(task)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.gmailLayout}>
-              {/* Avatar Column */}
-              <View style={styles.avatarColumn}>
-                <CustomAvatar
-                  src={
-                    senderInfo.isFromEmail
-                      ? undefined
-                      : require("../../../assets/images/flora.png")
-                  }
-                  alt={senderInfo.isFromEmail ? senderInfo.name : "Flora"}
-                  size={40}
-                />
-              </View>
+          <View style={styles.gestureOverlay} />
+        </PanGestureHandler>
+        <TouchableOpacity
+          style={styles.taskTouchable}
+          onPress={() => onPress(task)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.gmailLayout}>
+            {/* Avatar Column */}
+            <View style={styles.avatarColumn}>
+              <CustomAvatar
+                src={
+                  senderInfo.isFromEmail
+                    ? undefined
+                    : require("../../../assets/images/flora.png")
+                }
+                alt={senderInfo.isFromEmail ? senderInfo.name : "Flora"}
+                size={40}
+              />
+            </View>
 
-              {/* Content Column */}
-              <View style={styles.contentColumn}>
-                {/* Name and Date Row */}
-                <View style={styles.nameRow}>
-                  <Text
-                    style={[
-                      styles.sender,
-                      styles.taskSender,
-                      isRead && styles.taskSenderRead,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {senderInfo.isFromEmail ? senderInfo.name : "Flora"}
-                  </Text>
-                  <Text style={styles.timestamp}>
-                    {formatTimestamp(task.createdAt)}
-                  </Text>
-                </View>
-                {/* Task Title */}
-                <Text style={styles.subject} numberOfLines={2}>
-                  {senderInfo.subject}
+            {/* Content Column */}
+            <View style={styles.contentColumn}>
+              {/* Name and Date Row */}
+              <View style={styles.nameRow}>
+                <Text
+                  style={[
+                    styles.sender,
+                    styles.taskSender,
+                    isRead && styles.taskSenderRead,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {senderInfo.isFromEmail ? senderInfo.name : "Flora"}
                 </Text>
-                <Text style={styles.subject} numberOfLines={2}>
-                  {senderInfo.previewText}
+                <Text style={styles.timestamp}>
+                  {formatTimestamp(task.createdAt)}
                 </Text>
               </View>
+              {/* Task Title */}
+              <Text style={styles.subject} numberOfLines={2}>
+                {senderInfo.subject}
+              </Text>
+              <Text style={styles.subject} numberOfLines={2}>
+                {senderInfo.previewText}
+              </Text>
             </View>
-          </TouchableOpacity>
-          {/* Task Actions - only show for non-completed tasks */}
-          {!isCompletedTask && (
-            <View style={styles.taskActions}>
-              {getTaskActions(task).map((action, index) => (
-                <View key={index} style={styles.actionChip}>
-                  <Text style={styles.actionText}>{action}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </Animated.View>
-      </PanGestureHandler>
+          </View>
+        </TouchableOpacity>
+        {/* Task Actions - only show for non-completed tasks */}
+        {!isCompletedTask && (
+          <View style={styles.taskActions}>
+            {getTaskActions(task).map((action, index) => (
+              <View key={index} style={styles.actionChip}>
+                <Text style={styles.actionText}>{action}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </Animated.View>
     </View>
   );
 };
@@ -302,6 +329,15 @@ const createStyles = (colors: any) =>
       position: "relative",
       overflow: "hidden",
       height: 110,
+    },
+    gestureOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 30,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "transparent",
+      zIndex: 10,
     },
     swipeBackground: {
       position: "absolute",

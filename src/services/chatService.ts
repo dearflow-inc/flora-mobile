@@ -1,6 +1,7 @@
 import { API_CONFIG } from "@/config/api";
+import { Author, Chat, ChatMessage } from "@/store/slices/chatSlice";
+import { fetchWithDelay } from "@/utils/apiInterceptor";
 import { secureStorage } from "./secureStorage";
-import { Chat, ChatMessage, Author } from "@/store/slices/chatSlice";
 
 class ChatService {
   private baseURL = `${API_CONFIG.API_BASE_URL}/chats`;
@@ -25,7 +26,7 @@ class ChatService {
   ): Promise<Chat> {
     const headers = await this.getAuthHeaders();
 
-    const response = await fetch(this.baseURL, {
+    const response = await fetchWithDelay(this.baseURL, {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -46,7 +47,7 @@ class ChatService {
   async fetchChat(chatId: string): Promise<Chat> {
     const headers = await this.getAuthHeaders();
 
-    const response = await fetch(`${this.baseURL}/${chatId}`, {
+    const response = await fetchWithDelay(`${this.baseURL}/${chatId}`, {
       method: "GET",
       headers,
     });
@@ -64,7 +65,7 @@ class ChatService {
     try {
       const headers = await this.getAuthHeaders();
 
-      const response = await fetch(`${this.baseURL}/latest`, {
+      const response = await fetchWithDelay(`${this.baseURL}/latest`, {
         method: "GET",
         headers,
       });
@@ -100,7 +101,7 @@ class ChatService {
   ): Promise<ChatMessage[]> {
     const headers = await this.getAuthHeaders();
 
-    const response = await fetch(
+    const response = await fetchWithDelay(
       `${this.baseURL}/${chatId}/messages?skip=${skip}&limit=${limit}`,
       {
         method: "GET",
@@ -125,16 +126,19 @@ class ChatService {
   ): Promise<ChatMessage> {
     const headers = await this.getAuthHeaders();
 
-    const response = await fetch(`${this.baseURL}/${chatId}/messages`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        message,
-        attachmentIds,
-        refers,
-        metadata: {},
-      }),
-    });
+    const response = await fetchWithDelay(
+      `${this.baseURL}/${chatId}/messages`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          message,
+          attachmentIds,
+          refers,
+          metadata: {},
+        }),
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json();

@@ -1,27 +1,23 @@
-import axios, { AxiosInstance } from "axios";
+import { createApiInstance } from "@/config/api";
 import {
-  LoginCredentials,
-  RegisterCredentials,
   AuthResponse,
-  RefreshAuthResponse,
-  VerifyEmailResponse,
-  PasswordResetResponse,
-  UpdatePasswordResponse,
-  sendVerificationCodeResponse,
   AuthUserUsage,
+  LoginCredentials,
+  PasswordResetResponse,
+  RefreshAuthResponse,
+  RegisterCredentials,
+  UpdatePasswordResponse,
+  VerifyEmailResponse,
+  sendVerificationCodeResponse,
 } from "@/types/auth";
-import { API_CONFIG, PLATFORM_CONFIG } from "@/config/api";
+import { AxiosInstance } from "axios";
 
 class AuthService {
   private api: AxiosInstance;
   private platform = "mobile";
 
   constructor() {
-    this.api = axios.create({
-      baseURL: API_CONFIG.API_BASE_URL,
-      timeout: API_CONFIG.TIMEOUT,
-      headers: API_CONFIG.HEADERS,
-    });
+    this.api = createApiInstance();
 
     // Add request interceptor to include auth token
     this.api.interceptors.request.use(

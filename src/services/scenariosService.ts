@@ -1,23 +1,19 @@
-import axios, { AxiosResponse } from "axios";
+import { createApiInstance } from "@/config/api";
 import {
-  Scenarios,
-  FetchScenariosResponse,
   ContextView,
   CreateContextViewRequest,
-  UpdateContextViewRequest,
-  ScenarioItem,
   CreateScenarioItemRequest,
-  ScenarioTag,
   CreateScenarioTagRequest,
+  FetchScenariosResponse,
+  ScenarioItem,
+  Scenarios,
+  ScenarioTag,
+  UpdateContextViewRequest,
 } from "@/types/scenarios";
-import { API_CONFIG } from "@/config/api";
+import { AxiosResponse } from "axios";
 
 class ScenariosService {
-  private api = axios.create({
-    baseURL: API_CONFIG.API_BASE_URL,
-    timeout: API_CONFIG.TIMEOUT,
-    headers: API_CONFIG.HEADERS,
-  });
+  private api = createApiInstance();
 
   // Set auth token for requests
   setAuthToken(authToken: string, refreshToken: string): void {

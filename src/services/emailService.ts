@@ -1,27 +1,23 @@
-import axios, { AxiosInstance } from "axios";
+import { createApiInstance } from "@/config/api";
 import {
-  Email,
-  EmailWithoutContent,
-  EmailResponse,
-  EmailWithoutContentResponse,
-  SingleEmailResponse,
-  MultipleEmailsResponse,
-  GetEmailsRequest,
-  UpdateEmailStatusRequest,
-  SendEmailRequest,
   AddLookSessionRequest,
+  Email,
+  EmailResponse,
+  EmailWithoutContent,
+  EmailWithoutContentResponse,
+  GetEmailsRequest,
+  MultipleEmailsResponse,
+  SendEmailRequest,
+  SingleEmailResponse,
+  UpdateEmailStatusRequest,
 } from "@/types/email";
-import { API_CONFIG } from "@/config/api";
+import { AxiosInstance } from "axios";
 
 class EmailService {
   private api: AxiosInstance;
 
   constructor() {
-    this.api = axios.create({
-      baseURL: API_CONFIG.API_BASE_URL,
-      timeout: API_CONFIG.TIMEOUT,
-      headers: API_CONFIG.HEADERS,
-    });
+    this.api = createApiInstance();
 
     // Add request interceptor to include auth token
     this.api.interceptors.request.use(
@@ -56,9 +52,7 @@ class EmailService {
   }
 
   // GET /emails - Get my emails
-  async getMyEmails(
-    params?: GetEmailsRequest
-  ): Promise<Array<EmailWithoutContent>> {
+  async getMyEmails(params?: GetEmailsRequest): Promise<EmailWithoutContent[]> {
     try {
       const response = await this.api.get<EmailWithoutContentResponse>(
         "/emails",
@@ -87,7 +81,7 @@ class EmailService {
   }
 
   // GET /emails/thread/:threadId - Get emails by thread ID
-  async getEmailsByThreadId(threadId: string): Promise<Array<Email>> {
+  async getEmailsByThreadId(threadId: string): Promise<Email[]> {
     try {
       const response = await this.api.get<EmailResponse>(
         `/emails/thread/${threadId}`
@@ -101,7 +95,7 @@ class EmailService {
   }
 
   // GET /emails - Get emails by IDs
-  async getEmailsByIds(emailIds: Array<string>): Promise<Array<Email>> {
+  async getEmailsByIds(emailIds: string[]): Promise<Email[]> {
     try {
       const response = await this.api.get<EmailResponse>("/emails", {
         params: {
@@ -135,7 +129,7 @@ class EmailService {
   }
 
   // POST /emails/:emailId/read - Mark email as read
-  async markEmailAsRead(emailId: string): Promise<Array<Email>> {
+  async markEmailAsRead(emailId: string): Promise<Email[]> {
     try {
       const response = await this.api.post<MultipleEmailsResponse>(
         `/emails/${emailId}/read`
@@ -149,7 +143,7 @@ class EmailService {
   }
 
   // POST /emails/:emailId/delete - Delete email
-  async deleteEmail(emailId: string): Promise<Array<Email>> {
+  async deleteEmail(emailId: string): Promise<Email[]> {
     try {
       const response = await this.api.post<MultipleEmailsResponse>(
         `/emails/${emailId}/delete`
@@ -199,7 +193,7 @@ class EmailService {
     contactId: string,
     limit: number = 50,
     page: number = 0
-  ): Promise<Array<Email>> {
+  ): Promise<Email[]> {
     try {
       const response = await this.api.get<EmailResponse>(
         `/emails/by-contact/${contactId}`,
@@ -270,7 +264,7 @@ class EmailService {
   }
 
   // POST /emails/:emailId/archive - Archive email
-  async archiveEmail(emailId: string): Promise<Array<Email>> {
+  async archiveEmail(emailId: string): Promise<Email[]> {
     try {
       const response = await this.api.post<MultipleEmailsResponse>(
         `/emails/${emailId}/archive`

@@ -9,7 +9,7 @@ import { ParameterType, ToolEndpointAction } from "@/types/toolExecution";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -40,6 +40,135 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
 
   // State to track which emails are expanded
   const [expandedEmails, setExpandedEmails] = useState<Set<string>>(new Set());
+
+  // Memoized quote processing cache for performance optimization
+  // This prevents reprocessing the same HTML content multiple times
+  const quoteCache = useMemo(() => new Map<string, string>(), []);
+
+  // Optimized quote processing function using string operations instead of complex regex
+  // This is much faster on mobile devices compared to the previous regex-based approach
+  const processQuotes = useCallback(
+    (html: string) => {
+      // Check cache first
+      const cached = quoteCache.get(html);
+      if (cached !== undefined) {
+        return cached;
+      }
+
+      let processedContent = html;
+
+      // Early exit if no quotes to process
+      if (
+        !processedContent.includes('class="gmail_quote"') &&
+        !processedContent.includes('id="divRplyFwdMsg"')
+      ) {
+        return processedContent;
+      }
+
+      // Simple string-based approach instead of complex regex
+      const quoteContainer = (content: string) =>
+        `<div class="quote-container">
+        <div class="quote-header" onclick="toggleQuote(this)">
+          <span class="quote-label">Quote</span>
+          <span class="quote-toggle">▶</span>
+        </div>
+        <div class="quote-content" style="display: none;">${content}</div>
+      </div>`;
+
+      // Process Gmail quotes - simpler approach
+      if (processedContent.includes('class="gmail_quote"')) {
+        // Find all gmail_quote divs and wrap them
+        let startIndex = 0;
+        while (true) {
+          const divStart = processedContent.indexOf(
+            '<div class="gmail_quote"',
+            startIndex
+          );
+          if (divStart === -1) break;
+
+          // Find the closing div
+          let depth = 0;
+          let divEnd = divStart;
+          for (let i = divStart; i < processedContent.length; i++) {
+            if (processedContent.substring(i, i + 5) === "<div ") {
+              depth++;
+            } else if (processedContent.substring(i, i + 6) === "</div>") {
+              depth--;
+              if (depth === 0) {
+                divEnd = i + 6;
+                break;
+              }
+            }
+          }
+
+          if (divEnd > divStart) {
+            const quoteContent = processedContent.substring(divStart, divEnd);
+            const replacement = quoteContainer(quoteContent);
+            processedContent =
+              processedContent.substring(0, divStart) +
+              replacement +
+              processedContent.substring(divEnd);
+            startIndex = divStart + replacement.length;
+          } else {
+            break;
+          }
+        }
+      }
+
+      // Process Outlook quotes
+      if (processedContent.includes('id="divRplyFwdMsg"')) {
+        let startIndex = 0;
+        while (true) {
+          const divStart = processedContent.indexOf(
+            '<div id="divRplyFwdMsg"',
+            startIndex
+          );
+          if (divStart === -1) break;
+
+          // Find the closing div
+          let depth = 0;
+          let divEnd = divStart;
+          for (let i = divStart; i < processedContent.length; i++) {
+            if (processedContent.substring(i, i + 5) === "<div ") {
+              depth++;
+            } else if (processedContent.substring(i, i + 6) === "</div>") {
+              depth--;
+              if (depth === 0) {
+                divEnd = i + 6;
+                break;
+              }
+            }
+          }
+
+          if (divEnd > divStart) {
+            const quoteContent = processedContent.substring(divStart, divEnd);
+            const replacement = quoteContainer(quoteContent);
+            processedContent =
+              processedContent.substring(0, divStart) +
+              replacement +
+              processedContent.substring(divEnd);
+            startIndex = divStart + replacement.length;
+          } else {
+            break;
+          }
+        }
+      }
+
+      // Cache the result
+      quoteCache.set(html, processedContent);
+
+      // Limit cache size to prevent memory issues
+      if (quoteCache.size > 50) {
+        const firstKey = quoteCache.keys().next().value;
+        if (firstKey !== undefined) {
+          quoteCache.delete(firstKey);
+        }
+      }
+
+      return processedContent;
+    },
+    [quoteCache]
+  );
 
   // Initialize expanded emails - only the latest email should be expanded initially
   useEffect(() => {
@@ -284,55 +413,6 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
       return html
         .replace(/javascript:/gi, "") // Remove javascript: urls
         .replace(/<script[^>]*>.*?<\/script>/gi, ""); // Remove script tags but keep style tags
-    };
-
-    // Process quotes - hide Gmail and Outlook quotes by default
-    const processQuotes = (html: string) => {
-      let processedContent = html;
-
-      // Find and replace outermost Gmail quotes (div + following blockquote pattern)
-      processedContent = processedContent.replace(
-        /(?<!<div class="quote-container"[\s\S]*?)<div class="gmail_quote">([\s\S]*?)<\/div>\s*<blockquote[^>]*class="[^"]*gmail_quote[^"]*"[^>]*>([\s\S]*?)<\/blockquote>(?![\s\S]*?<\/div>\s*<\/div>)/gi,
-        (match, divContent, blockquoteContent) => {
-          return `<div class="quote-container">
-            <div class="quote-header" onclick="toggleQuote(this)">
-              <span class="quote-label">Quote</span>
-              <span class="quote-toggle">▶</span>
-            </div>
-            <div class="quote-content" style="display: none;">${divContent}${blockquoteContent}</div>
-          </div>`;
-        }
-      );
-
-      // Handle remaining standalone Gmail quote divs (outermost only)
-      processedContent = processedContent.replace(
-        /(?<!<div class="quote-container"[\s\S]*?)<div class="gmail_quote">([\s\S]*?)<\/div>(?![\s\S]*?<\/div>\s*<\/div>)/gi,
-        (match, content) => {
-          return `<div class="quote-container">
-            <div class="quote-header" onclick="toggleQuote(this)">
-              <span class="quote-label">Quote</span>
-              <span class="quote-toggle">▶</span>
-            </div>
-            <div class="quote-content" style="display: none;">${content}</div>
-          </div>`;
-        }
-      );
-
-      // Handle Outlook quotes (outermost only)
-      processedContent = processedContent.replace(
-        /(?<!<div class="quote-container"[\s\S]*?)<div id="divRplyFwdMsg">([\s\S]*?)<\/div>(?![\s\S]*?<\/div>\s*<\/div>)/gi,
-        (match, content) => {
-          return `<div class="quote-container">
-            <div class="quote-header" onclick="toggleQuote(this)">
-              <span class="quote-label">Quote</span>
-              <span class="quote-toggle">▶</span>
-            </div>
-            <div class="quote-content" style="display: none;">${content}</div>
-          </div>`;
-        }
-      );
-
-      return processedContent;
     };
 
     const sanitizedContent = htmlContent

@@ -1,5 +1,5 @@
-import { UserTask, UserTaskStatus, UserTaskType } from "@/types/userTask";
 import { EmailWithoutContent } from "@/types/email";
+import { UserTask, UserTaskStatus, UserTaskType } from "@/types/userTask";
 
 export type UserTaskFilter =
   | "inbox"
@@ -153,6 +153,50 @@ export const getFilterIcon = (filter: UserTaskFilter): string => {
     default:
       return "inbox";
   }
+};
+
+/**
+ * Find the next task in a filtered list of tasks
+ * @param currentTaskId - The ID of the current task
+ * @param filteredTasks - The filtered list of tasks
+ * @returns The next task or null if there is no next task
+ */
+export const getNextTask = (
+  currentTaskId: string,
+  filteredTasks: UserTask[]
+): UserTask | null => {
+  const currentIndex = filteredTasks.findIndex(
+    (task) => task.id === currentTaskId
+  );
+
+  if (currentIndex === -1 || currentIndex === filteredTasks.length - 1) {
+    // Current task not found or it's the last task
+    return null;
+  }
+
+  return filteredTasks[currentIndex + 1];
+};
+
+/**
+ * Find the previous task in a filtered list of tasks
+ * @param currentTaskId - The ID of the current task
+ * @param filteredTasks - The filtered list of tasks
+ * @returns The previous task or null if there is no previous task
+ */
+export const getPreviousTask = (
+  currentTaskId: string,
+  filteredTasks: UserTask[]
+): UserTask | null => {
+  const currentIndex = filteredTasks.findIndex(
+    (task) => task.id === currentTaskId
+  );
+
+  if (currentIndex <= 0) {
+    // Current task not found or it's the first task
+    return null;
+  }
+
+  return filteredTasks[currentIndex - 1];
 };
 
 export const isEmailTask = (task: UserTask): boolean => {

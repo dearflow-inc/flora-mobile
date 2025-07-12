@@ -1,21 +1,23 @@
-import React, { useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-  Dimensions,
-  Alert,
-} from "react-native";
-import { PanGestureHandler, State } from "react-native-gesture-handler";
-import { MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
-import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store";
 import { deleteToolExecutionAsync } from "@/store/slices/toolExecutionSlice";
-import { ToolExecution } from "@/types/toolExecution";
-import { parseEmailDraftFromToolExecution } from "@/types/toolExecution";
+import {
+  ToolExecution,
+  parseEmailDraftFromToolExecution,
+} from "@/types/toolExecution";
+import { MaterialIcons } from "@expo/vector-icons";
+import React, { useRef } from "react";
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
+import { useDispatch } from "react-redux";
 
 const { width: screenWidth } = Dimensions.get("window");
 const SWIPE_THRESHOLD = screenWidth * 0.25;
@@ -147,68 +149,70 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
         </View>
       </Animated.View>
 
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-        shouldCancelWhenOutside={false}
-        activeOffsetX={[-5, 5]}
-        failOffsetY={[-20, 20]}
+      <Animated.View
+        style={[
+          styles.draftItem,
+          {
+            transform: [{ translateX }],
+            opacity,
+          },
+        ]}
       >
-        <Animated.View
-          style={[
-            styles.draftItem,
-            {
-              transform: [{ translateX }],
-              opacity,
-            },
-          ]}
+        {/* Invisible gesture overlay - only covers right side */}
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+          shouldCancelWhenOutside={false}
+          activeOffsetX={[-5, 5]}
+          failOffsetY={[-20, 20]}
         >
-          <TouchableOpacity
-            style={styles.draftTouchable}
-            onPress={() => onPress(toolExecution)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.draftContent}>
-              {/* Icon */}
-              <View style={styles.iconContainer}>
-                <MaterialIcons name="drafts" size={24} color={colors.primary} />
-              </View>
-
-              {/* Content */}
-              <View style={styles.contentContainer}>
-                {/* Subject */}
-                <Text style={styles.subject} numberOfLines={1}>
-                  {emailData.subject || "No subject"}
-                </Text>
-
-                {/* Recipients */}
-                <Text style={styles.recipients} numberOfLines={1}>
-                  To: {getRecipientsText()}
-                </Text>
-
-                {/* Preview */}
-                {emailData.body && (
-                  <Text style={styles.preview} numberOfLines={2}>
-                    {emailData.body.replace(/<[^>]*>/g, "")}
-                  </Text>
-                )}
-              </View>
-
-              {/* Timestamp */}
-              <View style={styles.timestampContainer}>
-                <Text style={styles.timestamp}>
-                  {formatTimestamp(toolExecution.createdAt)}
-                </Text>
-                <MaterialIcons
-                  name="chevron-right"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </View>
+          <View style={styles.gestureOverlay} />
+        </PanGestureHandler>
+        <TouchableOpacity
+          style={styles.draftTouchable}
+          onPress={() => onPress(toolExecution)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.draftContent}>
+            {/* Icon */}
+            <View style={styles.iconContainer}>
+              <MaterialIcons name="drafts" size={24} color={colors.primary} />
             </View>
-          </TouchableOpacity>
-        </Animated.View>
-      </PanGestureHandler>
+
+            {/* Content */}
+            <View style={styles.contentContainer}>
+              {/* Subject */}
+              <Text style={styles.subject} numberOfLines={1}>
+                {emailData.subject || "No subject"}
+              </Text>
+
+              {/* Recipients */}
+              <Text style={styles.recipients} numberOfLines={1}>
+                To: {getRecipientsText()}
+              </Text>
+
+              {/* Preview */}
+              {emailData.body && (
+                <Text style={styles.preview} numberOfLines={2}>
+                  {emailData.body.replace(/<[^>]*>/g, "")}
+                </Text>
+              )}
+            </View>
+
+            {/* Timestamp */}
+            <View style={styles.timestampContainer}>
+              <Text style={styles.timestamp}>
+                {formatTimestamp(toolExecution.createdAt)}
+              </Text>
+              <MaterialIcons
+                name="chevron-right"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 };
@@ -218,6 +222,15 @@ const createStyles = (colors: any) =>
     draftItemContainer: {
       position: "relative",
       overflow: "hidden",
+    },
+    gestureOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 30,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "transparent",
+      zIndex: 10,
     },
     draftItem: {
       backgroundColor: colors.surface,

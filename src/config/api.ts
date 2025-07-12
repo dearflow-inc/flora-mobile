@@ -1,4 +1,14 @@
+import { addLocalDelayInterceptor } from "@/utils/apiInterceptor";
+import axios, { AxiosInstance } from "axios";
 import Constants from "expo-constants";
+
+// Utility function to add delay for local environment
+export const addLocalDelay = async (): Promise<void> => {
+  const environment = Constants.expoConfig?.extra?.ENVIRONMENT;
+  if (environment === "local") {
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 seconds delay
+  }
+};
 
 // API Configuration
 export const API_CONFIG = {
@@ -14,6 +24,20 @@ export const API_CONFIG = {
     "Content-Type": "application/json",
     Accept: "application/json",
   },
+};
+
+// Factory function to create axios instances with local delay interceptor
+export const createApiInstance = (): AxiosInstance => {
+  const api = axios.create({
+    baseURL: API_CONFIG.API_BASE_URL,
+    timeout: API_CONFIG.TIMEOUT,
+    headers: API_CONFIG.HEADERS,
+  });
+
+  // Add local delay interceptor
+  addLocalDelayInterceptor(api);
+
+  return api;
 };
 
 // OAuth Configuration

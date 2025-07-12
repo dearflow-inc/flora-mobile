@@ -22,6 +22,7 @@ interface UserTaskState {
   isUpdating: boolean;
   isCreating: boolean;
   isAnalyticsLoading: boolean;
+  removedTasks: UserTask[] | null;
 }
 
 const initialState: UserTaskState = {
@@ -33,6 +34,7 @@ const initialState: UserTaskState = {
   isUpdating: false,
   isCreating: false,
   isAnalyticsLoading: false,
+  removedTasks: null,
 };
 
 // Async thunks for user task operations
@@ -180,6 +182,37 @@ const userTaskSlice = createSlice({
     setSelectedUserTask: (state, action: PayloadAction<UserTask>) => {
       state.selectedUserTask = action.payload;
     },
+    // Optimistic updates
+    optimisticallyRemoveUserTask: (state, action: PayloadAction<string>) => {
+      const taskId = action.payload;
+      const removedTask = state.userTasks.find((task) => task.id === taskId);
+      if (removedTask) {
+        // Store the removed task in a temporary state for potential restoration
+        state.removedTasks = state.removedTasks || [];
+        state.removedTasks.push(removedTask);
+        // Remove from main list
+        state.userTasks = state.userTasks.filter((task) => task.id !== taskId);
+        if (state.selectedUserTask?.id === taskId) {
+          state.selectedUserTask = null;
+        }
+      }
+    },
+    restoreUserTask: (state, action: PayloadAction<string>) => {
+      const taskId = action.payload;
+      if (state.removedTasks) {
+        const taskToRestore = state.removedTasks.find(
+          (task) => task.id === taskId
+        );
+        if (taskToRestore) {
+          // Restore to main list
+          state.userTasks.unshift(taskToRestore);
+          // Remove from removed tasks
+          state.removedTasks = state.removedTasks.filter(
+            (task) => task.id !== taskId
+          );
+        }
+      }
+    },
     updateUserTaskFromWebSocket: (state, action: PayloadAction<UserTask>) => {
       const updatedUserTask = action.payload;
       const index = state.userTasks.findIndex(
@@ -206,6 +239,8 @@ const userTaskSlice = createSlice({
         state.isLoading = false;
         state.userTasks = action.payload;
         state.error = null;
+        // Clear any removed tasks when refetching
+        state.removedTasks = [];
       })
       .addCase(fetchUserTasksAsync.rejected, (state, action) => {
         state.isLoading = false;
@@ -319,16 +354,29 @@ const userTaskSlice = createSlice({
       })
       .addCase(deleteUserTaskAsync.fulfilled, (state, action) => {
         state.isUpdating = false;
-        state.userTasks = state.userTasks.filter(
-          (task) => task.id !== action.payload.userTaskId
-        );
-        if (state.selectedUserTask?.id === action.payload.userTaskId) {
-          state.selectedUserTask = null;
+        // Task was already optimistically removed, just clean up removedTasks
+        if (state.removedTasks) {
+          state.removedTasks = state.removedTasks.filter(
+            (task) => task.id !== action.payload.userTaskId
+          );
         }
         state.error = null;
       })
       .addCase(deleteUserTaskAsync.rejected, (state, action) => {
         state.isUpdating = false;
+        // Restore the task that was optimistically removed
+        if (action.meta?.arg) {
+          const taskId = action.meta.arg as string;
+          const taskToRestore = state.removedTasks?.find(
+            (task) => task.id === taskId
+          );
+          if (taskToRestore) {
+            state.userTasks.unshift(taskToRestore);
+            state.removedTasks = state.removedTasks.filter(
+              (task) => task.id !== taskId
+            );
+          }
+        }
         state.error = action.error.message || "Failed to delete user task";
       })
 
@@ -339,16 +387,29 @@ const userTaskSlice = createSlice({
       })
       .addCase(completeUserTaskAsync.fulfilled, (state, action) => {
         state.isUpdating = false;
-        const index = state.userTasks.findIndex(
-          (task) => task.id === action.payload.userTaskId
-        );
-        if (index !== -1 && state.userTasks[index]) {
-          state.userTasks[index].status = UserTaskStatus.COMPLETED;
+        // Task was already optimistically removed, just clean up removedTasks
+        if (state.removedTasks) {
+          state.removedTasks = state.removedTasks.filter(
+            (task) => task.id !== action.payload.userTaskId
+          );
         }
         state.error = null;
       })
       .addCase(completeUserTaskAsync.rejected, (state, action) => {
         state.isUpdating = false;
+        // Restore the task that was optimistically removed
+        if (action.meta?.arg) {
+          const taskId = (action.meta.arg as any).userTaskId;
+          const taskToRestore = state.removedTasks?.find(
+            (task) => task.id === taskId
+          );
+          if (taskToRestore) {
+            state.userTasks.unshift(taskToRestore);
+            state.removedTasks = state.removedTasks.filter(
+              (task) => task.id !== taskId
+            );
+          }
+        }
         state.error = action.error.message || "Failed to complete user task";
       })
 
@@ -450,6 +511,8 @@ export const {
   clearUserTaskError,
   clearSelectedUserTask,
   setSelectedUserTask,
+  optimisticallyRemoveUserTask,
+  restoreUserTask,
   updateUserTaskFromWebSocket,
 } = userTaskSlice.actions;
 

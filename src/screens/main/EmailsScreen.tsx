@@ -117,6 +117,29 @@ export const EmailsScreen = () => {
     dispatch(fetchMyScenarios());
   }, []);
 
+  // Fetch data when filter changes
+  useEffect(() => {
+    // Always fetch user tasks for inbox, archived, and snoozed filters
+    if (
+      activeFilter === "inbox" ||
+      activeFilter === "archived" ||
+      activeFilter === "snoozed"
+    ) {
+      dispatch(fetchUserTasksAsync({}));
+      dispatch(fetchMyScenarios());
+    }
+
+    // Fetch emails for sent and trash filters
+    if (activeFilter === "sent" || activeFilter === "trash") {
+      dispatch(fetchMyEmailsAsync());
+    }
+
+    // Fetch tool executions (drafts) for draft filter
+    if (activeFilter === "draft") {
+      dispatch(fetchMyToolExecutionsAsync());
+    }
+  }, [activeFilter, dispatch]);
+
   // Auto-select context view to null when inbox filter is selected
   useEffect(() => {
     if (activeFilter === "inbox") {
@@ -219,6 +242,7 @@ export const EmailsScreen = () => {
 
       navigation.navigate("ToolExecution", {
         toolExecutionId: toolExecution.id,
+        canBeDeleted: true,
       });
     } catch (error) {
       Alert.alert("Error", "Failed to create email draft. Please try again.");
@@ -247,8 +271,13 @@ export const EmailsScreen = () => {
       }
     }
 
-    // Default navigation to UserTaskDetail
-    navigation.navigate("UserTaskDetail", { userTaskId: task.id });
+    // Default navigation to UserTaskDetail with filter context
+    navigation.navigate("UserTaskDetail", {
+      userTaskId: task.id,
+      activeFilter,
+      selectedContextViewId,
+      searchQuery,
+    });
   };
 
   const handleDeleteTaskLocal = async (taskId: string) => {

@@ -46,6 +46,11 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 // import { VideoContextView } from "@/components/context/VideoContextView";
 import { TaskActionComponent } from "@/components/actions/TaskActionComponent";
+import {
+  getFilteredUserTasks,
+  getNextTask,
+  UserTaskFilter,
+} from "@/utils/taskUtils";
 import { actionsByUserTaskType } from "@/utils/userTaskActions";
 
 type UserTaskScreenProps = NativeStackNavigationProp<
@@ -55,6 +60,9 @@ type UserTaskScreenProps = NativeStackNavigationProp<
 
 interface UserTaskScreenParams {
   userTaskId: string;
+  activeFilter?: string;
+  selectedContextViewId?: string | null;
+  searchQuery?: string;
 }
 
 export const UserTaskScreen = () => {
@@ -63,7 +71,8 @@ export const UserTaskScreen = () => {
   const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { userTaskId } = (route.params as UserTaskScreenParams) || {};
+  const { userTaskId, activeFilter, selectedContextViewId, searchQuery } =
+    (route.params as UserTaskScreenParams) || {};
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSuggestionsExpanded, setIsSuggestionsExpanded] = useState(false);
@@ -205,9 +214,8 @@ export const UserTaskScreen = () => {
         })
       ).unwrap();
 
-      Alert.alert("Success", "Task archived successfully", [
-        { text: "OK", onPress: handleBack },
-      ]);
+      // Navigate to next task instead of showing alert and going back
+      navigateToNextTask();
     } catch (error) {
       Alert.alert("Error", "Failed to archive task. Please try again.");
     }
@@ -224,9 +232,8 @@ export const UserTaskScreen = () => {
         onPress: async () => {
           try {
             await dispatch(deleteUserTaskAsync(userTask.id)).unwrap();
-            Alert.alert("Task Deleted", "Task has been deleted", [
-              { text: "OK", onPress: handleBack },
-            ]);
+            // Navigate to next task instead of showing alert and going back
+            navigateToNextTask();
           } catch (error) {
             Alert.alert("Error", "Failed to delete task. Please try again.");
           }
@@ -247,9 +254,8 @@ export const UserTaskScreen = () => {
         })
       ).unwrap();
 
-      Alert.alert("Task Snoozed", "Task has been snoozed for 1 hour", [
-        { text: "OK", onPress: handleBack },
-      ]);
+      // Navigate to next task instead of showing alert and going back
+      navigateToNextTask();
     } catch (error) {
       Alert.alert("Error", "Failed to snooze task. Please try again.");
     }
@@ -348,8 +354,8 @@ export const UserTaskScreen = () => {
         })
       ).unwrap();
 
-      // Navigate back to task overview after successful completion
-      navigation.goBack();
+      // Navigate to next task instead of going back
+      navigateToNextTask();
     } catch (error) {
       Alert.alert("Error", "Failed to complete task. Please try again.");
     }
@@ -364,7 +370,8 @@ export const UserTaskScreen = () => {
         request: { reason: UserTaskIgnoreReason.OTHER },
       })
     ).unwrap();
-    navigation.goBack();
+    // Navigate to next task instead of going back
+    navigateToNextTask();
   };
 
   const handleActionUpdate = async (actionId: string, actionData: any) => {
@@ -399,6 +406,97 @@ export const UserTaskScreen = () => {
 
   const handleToggleSuggestions = () => {
     setIsSuggestionsExpanded(!isSuggestionsExpanded);
+  };
+
+  // Function to navigate to the next task in the filtered list
+  const navigateToNextTask = () => {
+    if (!activeFilter || !userTask) return;
+
+    // Get the filtered tasks using the same logic as EmailsScreen
+    const filteredTasks = getFilteredUserTasks(
+      userTasks,
+      activeFilter as UserTaskFilter,
+      selectedContextViewId || null,
+      searchQuery || ""
+    );
+
+    // Find the next task
+    const nextTask = getNextTask(userTask.id, filteredTasks);
+
+    if (nextTask) {
+      // Navigate to the next task with the same filter context
+      navigation.replace("UserTaskDetail", {
+        userTaskId: nextTask.id,
+        activeFilter,
+        selectedContextViewId,
+        searchQuery,
+      });
+    } else {
+      // No next task, go back to the task list
+      navigation.goBack();
+    }
+  };
+
+  // Function to navigate to the previous task in the filtered list
+  const navigateToPreviousTask = () => {
+    if (!activeFilter || !userTask) return;
+
+    // Get the filtered tasks using the same logic as EmailsScreen
+    const filteredTasks = getFilteredUserTasks(
+      userTasks,
+      activeFilter as UserTaskFilter,
+      selectedContextViewId || null,
+      searchQuery || ""
+    );
+
+    // Find the previous task
+    const currentIndex = filteredTasks.findIndex(
+      (task) => task.id === userTask.id
+    );
+    const previousTask =
+      currentIndex > 0 ? filteredTasks[currentIndex - 1] : null;
+
+    if (previousTask) {
+      // Navigate to the previous task with the same filter context
+      navigation.replace("UserTaskDetail", {
+        userTaskId: previousTask.id,
+        activeFilter,
+        selectedContextViewId,
+        searchQuery,
+      });
+    } else {
+      // No previous task, go back to the task list
+      navigation.goBack();
+    }
+  };
+
+  // Check if we can navigate to previous/next tasks
+  const canNavigateToPrevious = () => {
+    if (!activeFilter || !userTask) return false;
+    const filteredTasks = getFilteredUserTasks(
+      userTasks,
+      activeFilter as UserTaskFilter,
+      selectedContextViewId || null,
+      searchQuery || ""
+    );
+    const currentIndex = filteredTasks.findIndex(
+      (task) => task.id === userTask.id
+    );
+    return currentIndex > 0;
+  };
+
+  const canNavigateToNext = () => {
+    if (!activeFilter || !userTask) return false;
+    const filteredTasks = getFilteredUserTasks(
+      userTasks,
+      activeFilter as UserTaskFilter,
+      selectedContextViewId || null,
+      searchQuery || ""
+    );
+    const currentIndex = filteredTasks.findIndex(
+      (task) => task.id === userTask.id
+    );
+    return currentIndex >= 0 && currentIndex < filteredTasks.length - 1;
   };
 
   // Helper function to determine if task should navigate to EmailThreadScreen
@@ -596,9 +694,48 @@ export const UserTaskScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <MaterialIcons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <MaterialIcons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          {/* Navigation buttons for previous/next task */}
+          {activeFilter && (
+            <View style={styles.navigationButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  !canNavigateToPrevious() && styles.navButtonDisabled,
+                ]}
+                onPress={navigateToPreviousTask}
+                disabled={!canNavigateToPrevious()}
+              >
+                <MaterialIcons
+                  name="chevron-left"
+                  size={24}
+                  color={
+                    canNavigateToPrevious() ? colors.text : colors.textSecondary
+                  }
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  !canNavigateToNext() && styles.navButtonDisabled,
+                ]}
+                onPress={navigateToNextTask}
+                disabled={!canNavigateToNext()}
+              >
+                <MaterialIcons
+                  name="chevron-right"
+                  size={24}
+                  color={
+                    canNavigateToNext() ? colors.text : colors.textSecondary
+                  }
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
         <View style={styles.headerRight}>
           {/* Show email thread button for completed email tasks */}
           {userTask &&
@@ -810,6 +947,22 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+    },
+    headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    navigationButtons: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginLeft: 8,
+    },
+    navButton: {
+      padding: 4,
+      marginHorizontal: 2,
+    },
+    navButtonDisabled: {
+      opacity: 0.5,
     },
     backButton: {
       padding: 8,

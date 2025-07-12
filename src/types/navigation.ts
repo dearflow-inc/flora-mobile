@@ -38,7 +38,12 @@ export type AppStackParamList = {
     userTaskId?: string;
     canBeDeleted?: boolean;
   };
-  UserTaskDetail: { userTaskId: string };
+  UserTaskDetail: {
+    userTaskId: string;
+    activeFilter?: string;
+    selectedContextViewId?: string | null;
+    searchQuery?: string;
+  };
   EmailThreadDetail: { threadId: string };
 };
 
