@@ -261,7 +261,7 @@ export const EmailReplyAction: React.FC<EmailReplyActionProps> = ({
               <WebView
                 style={[styles.emailPreviewText, { minHeight: 200 }]}
                 source={{
-                  html: `<div style="font-family: system-ui; color: ${colors.text}; font-size: 20px; line-height: 22px;">${emailBodyPreview}</div>`,
+                  html: `<div style="font-family: system-ui; color: ${colors.text}; font-size: 24px; line-height: 24px;">${emailBodyPreview}</div>`,
                 }}
                 scrollEnabled={false}
               />

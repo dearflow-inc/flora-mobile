@@ -329,6 +329,7 @@ export const EditReplyEmail: React.FC<EditReplyEmailProps> = ({
         isExecuting={false}
         hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
         disabled={!emailData.body.trim()}
+        hideSendIcon
         sendButtonText="Finish Editing"
       />
 

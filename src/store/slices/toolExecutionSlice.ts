@@ -344,6 +344,7 @@ export const toolExecutionSlice = createSlice({
       .addCase(fetchToolExecutionByIdAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentToolExecution = action.payload;
+        state.toolExecutions.unshift(action.payload);
         state.error = null;
       })
       .addCase(fetchToolExecutionByIdAsync.rejected, (state, action) => {

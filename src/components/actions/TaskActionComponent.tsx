@@ -1,15 +1,16 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import {
-  UserTaskAction,
   UserTask,
-  UserTaskType,
+  UserTaskAction,
   UserTaskStatus,
+  UserTaskType,
 } from "@/types/userTask";
+import { MaterialIcons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { CreateTodoAction } from "./CreateTodoAction";
 import { EmailCleanUpAction } from "./EmailCleanUpAction";
+import { EmailFollowUpAction } from "./EmailFollowUpAction";
 import { EmailReplyAction } from "./EmailReplyAction";
 
 interface TaskActionComponentProps {
@@ -44,6 +45,8 @@ export const TaskActionComponent: React.FC<TaskActionComponentProps> = ({
         return <EmailCleanUpAction action={action} userTask={userTask} />;
       case UserTaskType.EMAIL_REPLY:
         return <EmailReplyAction action={action} userTask={userTask} />;
+      case UserTaskType.EMAIL_FOLLOW_UP:
+        return <EmailFollowUpAction action={action} userTask={userTask} />;
       default:
         return null;
     }

@@ -286,8 +286,57 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
         .replace(/<script[^>]*>.*?<\/script>/gi, ""); // Remove script tags but keep style tags
     };
 
+    // Process quotes - hide Gmail and Outlook quotes by default
+    const processQuotes = (html: string) => {
+      let processedContent = html;
+
+      // Find and replace outermost Gmail quotes (div + following blockquote pattern)
+      processedContent = processedContent.replace(
+        /(?<!<div class="quote-container"[\s\S]*?)<div class="gmail_quote">([\s\S]*?)<\/div>\s*<blockquote[^>]*class="[^"]*gmail_quote[^"]*"[^>]*>([\s\S]*?)<\/blockquote>(?![\s\S]*?<\/div>\s*<\/div>)/gi,
+        (match, divContent, blockquoteContent) => {
+          return `<div class="quote-container">
+            <div class="quote-header" onclick="toggleQuote(this)">
+              <span class="quote-label">Quote</span>
+              <span class="quote-toggle">▶</span>
+            </div>
+            <div class="quote-content" style="display: none;">${divContent}${blockquoteContent}</div>
+          </div>`;
+        }
+      );
+
+      // Handle remaining standalone Gmail quote divs (outermost only)
+      processedContent = processedContent.replace(
+        /(?<!<div class="quote-container"[\s\S]*?)<div class="gmail_quote">([\s\S]*?)<\/div>(?![\s\S]*?<\/div>\s*<\/div>)/gi,
+        (match, content) => {
+          return `<div class="quote-container">
+            <div class="quote-header" onclick="toggleQuote(this)">
+              <span class="quote-label">Quote</span>
+              <span class="quote-toggle">▶</span>
+            </div>
+            <div class="quote-content" style="display: none;">${content}</div>
+          </div>`;
+        }
+      );
+
+      // Handle Outlook quotes (outermost only)
+      processedContent = processedContent.replace(
+        /(?<!<div class="quote-container"[\s\S]*?)<div id="divRplyFwdMsg">([\s\S]*?)<\/div>(?![\s\S]*?<\/div>\s*<\/div>)/gi,
+        (match, content) => {
+          return `<div class="quote-container">
+            <div class="quote-header" onclick="toggleQuote(this)">
+              <span class="quote-label">Quote</span>
+              <span class="quote-toggle">▶</span>
+            </div>
+            <div class="quote-content" style="display: none;">${content}</div>
+          </div>`;
+        }
+      );
+
+      return processedContent;
+    };
+
     const sanitizedContent = htmlContent
-      ? sanitizeHtml(contentToRender)
+      ? processQuotes(sanitizeHtml(contentToRender))
       : contentToRender;
 
     // State to track WebView height
@@ -379,11 +428,56 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
                   margin: 0;
                   padding: 0;
                 }
+                .quote-container {
+                  margin: 8px 0;
+                  border-radius: 4px;
+                  border: 1px solid ${colors.border};
+                }
+                .quote-header {
+                  padding: 8px 12px;
+                  background-color: ${colors.surface};
+                  border-bottom: 1px solid ${colors.border};
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  cursor: pointer;
+                  user-select: none;
+                }
+                .quote-label {
+                  font-size: 12px;
+                  color: ${colors.textSecondary};
+                  font-weight: 500;
+                }
+                .quote-toggle {
+                  font-size: 14px;
+                  color: ${colors.textSecondary};
+                  font-family: monospace;
+                  transition: transform 0.2s ease;
+                }
+                .quote-content {
+                  padding: 12px;
+                  background-color: ${colors.surface};
+                  border-radius: 0 0 4px 4px;
+                  overflow: hidden;
+                }
               </style>
             </head>
             <body>
               ${sanitizedContent}
               <script>
+                // Toggle quote visibility
+                function toggleQuote(headerElement) {
+                  const quoteContent = headerElement.nextElementSibling;
+                  const toggleElement = headerElement.querySelector('.quote-toggle');
+                  const isHidden = quoteContent.style.display === 'none';
+                  
+                  quoteContent.style.display = isHidden ? 'block' : 'none';
+                  toggleElement.textContent = isHidden ? '▼' : '▶';
+                  
+                  // Re-measure height after toggle
+                  setTimeout(measureHeight, 50);
+                }
+                
                 // Measure content height and send to React Native
                 function measureHeight() {
                   const height = document.body.scrollHeight;
@@ -562,45 +656,43 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
                     </Text>
                   </View>
                 </View>
-                <View style={styles.emailHeaderRight}>
+                <View>
+                  <View style={styles.emailHeaderRight}>
+                    <MaterialIcons
+                      name={isExpanded ? "expand-less" : "expand-more"}
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => handleReply(email)}
+                    >
+                      <MaterialIcons
+                        name="reply"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                    {email.isOutgoing && (
+                      <View style={styles.outgoingIndicator}>
+                        <MaterialIcons
+                          name="send"
+                          size={14}
+                          color={colors.primary}
+                        />
+                        <Text style={styles.outgoingText}>Sent</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.emailTimestamp}>
                     {formatTimestamp(email.sent)}
                   </Text>
-                  <MaterialIcons
-                    name={isExpanded ? "expand-less" : "expand-more"}
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => handleReply(email)}
-                  >
-                    <MaterialIcons
-                      name="reply"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.actionButton}>
-                    <MaterialIcons
-                      name="more-vert"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
 
               <View style={styles.emailContentWrapper}>
                 {renderEmailContent(email, isExpanded)}
               </View>
-
-              {email.isOutgoing && (
-                <View style={styles.outgoingIndicator}>
-                  <MaterialIcons name="send" size={14} color={colors.primary} />
-                  <Text style={styles.outgoingText}>Sent</Text>
-                </View>
-              )}
             </View>
           );
         })}
@@ -665,6 +757,7 @@ const createStyles = (colors: any, height: number) =>
       fontSize: 12,
       color: colors.textSecondary,
       marginBottom: 4,
+      alignSelf: "flex-end",
     },
     actionButton: {
       padding: 4,
@@ -694,7 +787,6 @@ const createStyles = (colors: any, height: number) =>
     outgoingIndicator: {
       flexDirection: "row",
       alignItems: "center",
-      marginTop: 8,
       gap: 4,
     },
     outgoingText: {

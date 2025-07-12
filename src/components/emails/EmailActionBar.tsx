@@ -20,6 +20,7 @@ interface EmailActionBarProps {
   isExecuting: boolean;
   hasFollowUp: boolean;
   disabled?: boolean;
+  hideSendIcon?: boolean;
   sendButtonText?: string;
 }
 
@@ -34,6 +35,7 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
   isExecuting,
   hasFollowUp,
   disabled = false,
+  hideSendIcon = false,
   sendButtonText = "Send",
 }) => {
   const { colors } = useTheme();
@@ -109,7 +111,9 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <>
-              <MaterialIcons name="send" size={18} color="#FFFFFF" />
+              {!hideSendIcon && (
+                <MaterialIcons name="send" size={18} color="#FFFFFF" />
+              )}
               <Text style={styles.sendButtonText}>{sendButtonText}</Text>
             </>
           )}

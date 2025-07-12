@@ -1,21 +1,20 @@
+import { CustomAvatar } from "@/components/ui/CustomAvatar";
+import { useContacts } from "@/hooks/useContacts";
+import { useTheme } from "@/hooks/useTheme";
+import { RootState } from "@/store";
+import { AuthorType, EmailWithoutContent } from "@/types/email";
+import { MaterialIcons } from "@expo/vector-icons";
 import React, { useRef } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
   Animated,
   Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/useTheme";
-import { CustomAvatar } from "@/components/ui/CustomAvatar";
-import { AuthorType, EmailWithoutContent } from "@/types/email";
-import { RootState } from "@/store";
 import { useSelector } from "react-redux";
-import { Contact } from "@/types/contact";
-import { useContacts } from "@/hooks/useContacts";
 
 const { width: screenWidth } = Dimensions.get("window");
 const SWIPE_THRESHOLD = screenWidth * 0.25;
@@ -127,6 +126,11 @@ export const EmailItem: React.FC<EmailItemProps> = ({
     const { translationX, state } = event.nativeEvent;
 
     if (state === State.ACTIVE) {
+      // Disable swipe if no callback is defined for that direction
+      if ((translationX < 0 && !onDelete) || (translationX > 0 && !onArchive)) {
+        return;
+      }
+
       translateX.setValue(translationX);
       // Show background when swiping
       const progress = Math.min(Math.abs(translationX) / SWIPE_THRESHOLD, 1);
@@ -195,6 +199,7 @@ export const EmailItem: React.FC<EmailItemProps> = ({
         shouldCancelWhenOutside={false}
         activeOffsetX={[-5, 5]}
         failOffsetY={[-20, 20]}
+        enabled={onDelete !== undefined || onArchive !== undefined}
       >
         <Animated.View
           style={[

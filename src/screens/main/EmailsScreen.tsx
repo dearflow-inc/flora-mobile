@@ -398,14 +398,6 @@ export const EmailsScreen = () => {
           Alert.alert("Email", `Subject: ${email.subject}`);
         }
       }}
-      onDelete={(emailId) => {
-        // Handle email deletion
-        Alert.alert("Delete Email", "Email deletion not implemented yet");
-      }}
-      onArchive={(emailId) => {
-        // Handle email archiving
-        Alert.alert("Archive Email", "Email archiving not implemented yet");
-      }}
     />
   );
 

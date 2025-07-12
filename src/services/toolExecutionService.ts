@@ -1,14 +1,14 @@
-import axios, { AxiosInstance } from "axios";
+import { API_CONFIG } from "@/config/api";
 import {
+  CreateToolExecutionRequest,
+  ExecuteToolExecutionRequest,
+  ScheduleToolExecutionRequest,
   ToolExecution,
   ToolExecutionResponse,
   ToolExecutionsResponse,
-  CreateToolExecutionRequest,
   UpdateToolExecutionRequest,
-  ExecuteToolExecutionRequest,
-  ScheduleToolExecutionRequest,
 } from "@/types/toolExecution";
-import { API_CONFIG } from "@/config/api";
+import axios, { AxiosInstance } from "axios";
 
 class ToolExecutionService {
   private api: AxiosInstance;
@@ -70,7 +70,7 @@ class ToolExecutionService {
   }
 
   // GET /tool-executions/my - Get all my tool executions
-  async getMyToolExecutions(): Promise<Array<ToolExecution>> {
+  async getMyToolExecutions(): Promise<ToolExecution[]> {
     try {
       const response = await this.api.get<ToolExecutionsResponse>(
         "/tool-executions/my"
