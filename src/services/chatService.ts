@@ -149,6 +149,20 @@ class ChatService {
     return data.message;
   }
 
+  async closeChat(chatId: string): Promise<void> {
+    const headers = await this.getAuthHeaders();
+
+    const response = await fetchWithDelay(`${this.baseURL}/${chatId}/close`, {
+      method: "POST",
+      headers,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to close chat");
+    }
+  }
+
   // Server-Sent Events for real-time updates
   async createMessageStream(
     chatId: string,

@@ -250,7 +250,6 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
           },
         ]}
       >
-        {/* Invisible gesture overlay - only covers right side */}
         <PanGestureHandler
           onGestureEvent={onGestureEvent}
           onHandlerStateChange={onHandlerStateChange}
@@ -259,55 +258,54 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
           failOffsetY={[-20, 20]}
           enabled={!isCompletedTask}
         >
-          <View style={styles.gestureOverlay} />
-        </PanGestureHandler>
-        <TouchableOpacity
-          style={styles.taskTouchable}
-          onPress={() => onPress(task)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.gmailLayout}>
-            {/* Avatar Column */}
-            <View style={styles.avatarColumn}>
-              <CustomAvatar
-                src={
-                  senderInfo.isFromEmail
-                    ? undefined
-                    : require("../../../assets/images/flora.png")
-                }
-                alt={senderInfo.isFromEmail ? senderInfo.name : "Flora"}
-                size={40}
-              />
-            </View>
+          <TouchableOpacity
+            style={styles.taskTouchable}
+            onPress={() => onPress(task)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.gmailLayout}>
+              {/* Avatar Column */}
+              <View style={styles.avatarColumn}>
+                <CustomAvatar
+                  src={
+                    senderInfo.isFromEmail
+                      ? undefined
+                      : require("../../../assets/images/flora.png")
+                  }
+                  alt={senderInfo.isFromEmail ? senderInfo.name : "Flora"}
+                  size={40}
+                />
+              </View>
 
-            {/* Content Column */}
-            <View style={styles.contentColumn}>
-              {/* Name and Date Row */}
-              <View style={styles.nameRow}>
-                <Text
-                  style={[
-                    styles.sender,
-                    styles.taskSender,
-                    isRead && styles.taskSenderRead,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {senderInfo.isFromEmail ? senderInfo.name : "Flora"}
+              {/* Content Column */}
+              <View style={styles.contentColumn}>
+                {/* Name and Date Row */}
+                <View style={styles.nameRow}>
+                  <Text
+                    style={[
+                      styles.sender,
+                      styles.taskSender,
+                      isRead && styles.taskSenderRead,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {senderInfo.isFromEmail ? senderInfo.name : "Flora"}
+                  </Text>
+                  <Text style={styles.timestamp}>
+                    {formatTimestamp(task.createdAt)}
+                  </Text>
+                </View>
+                {/* Task Title */}
+                <Text style={styles.subject} numberOfLines={2}>
+                  {senderInfo.subject}
                 </Text>
-                <Text style={styles.timestamp}>
-                  {formatTimestamp(task.createdAt)}
+                <Text style={styles.subject} numberOfLines={2}>
+                  {senderInfo.previewText}
                 </Text>
               </View>
-              {/* Task Title */}
-              <Text style={styles.subject} numberOfLines={2}>
-                {senderInfo.subject}
-              </Text>
-              <Text style={styles.subject} numberOfLines={2}>
-                {senderInfo.previewText}
-              </Text>
             </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </PanGestureHandler>
         {/* Task Actions - only show for non-completed tasks */}
         {!isCompletedTask && (
           <View style={styles.taskActions}>
@@ -330,15 +328,7 @@ const createStyles = (colors: any) =>
       overflow: "hidden",
       height: 110,
     },
-    gestureOverlay: {
-      position: "absolute",
-      top: 0,
-      left: 30,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "transparent",
-      zIndex: 10,
-    },
+
     swipeBackground: {
       position: "absolute",
       top: 0,

@@ -1,35 +1,60 @@
-import React, { useState } from "react";
+import { ChatView } from "@/components/ChatView";
+import { useWebSocket } from "@/contexts/WebSocketContext";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useTheme } from "@/hooks/useTheme";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  Modal,
-} from "react-native";
+  AuthorType,
+  clearChatAndCreateNewAsync,
+} from "@/store/slices/chatSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useAppDispatch } from "@/hooks/redux";
+import React, { useState } from "react";
 import {
-  clearCurrentChat,
-  createChatAsync,
-  AuthorType,
-} from "@/store/slices/chatSlice";
-import { useWebSocket } from "@/contexts/WebSocketContext";
-import { useTheme } from "@/hooks/useTheme";
-import { ChatView } from "@/components/ChatView";
+  Modal,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export const ChatScreen = () => {
   const dispatch = useAppDispatch();
   const { connected: wsConnected } = useWebSocket();
   const { colors } = useTheme();
+  const { currentProfile } = useAppSelector((state) => state.profile);
 
   const [isMenuModalVisible, setIsMenuModalVisible] = useState(false);
 
   const styles = createStyles(colors);
 
-  const handleClearChat = () => {
-    dispatch(clearCurrentChat());
+  const handleClearChat = async () => {
+    if (!currentProfile) {
+      console.error("No current profile available");
+      return;
+    }
+
+    // Create participants array with current user and virtual assistant
+    const participants = [
+      {
+        type: AuthorType.VIRTUAL_ASSISTANT,
+        externalId: "flora-general",
+        meta: {
+          name: "Flora",
+        },
+      },
+    ];
+
+    try {
+      await dispatch(
+        clearChatAndCreateNewAsync({
+          participants,
+          aiInitConversation: true,
+        })
+      ).unwrap();
+    } catch (error) {
+      console.error("Failed to clear chat and create new:", error);
+    }
   };
 
   return (

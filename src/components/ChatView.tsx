@@ -1,39 +1,39 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  ActivityIndicator,
-  Clipboard,
-  Keyboard,
-  Linking,
-} from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import Markdown from "react-native-markdown-display";
-import * as WebBrowser from "expo-web-browser";
+import { ChatMessageAttachment } from "@/components/ChatMessageAttachment";
+import { SuggestedAction } from "@/components/SuggestedAction";
+import { AvailableTools, ToolCallDisplay } from "@/components/ToolCallDisplay";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useTheme } from "@/hooks/useTheme";
 import {
+  AuthorType,
+  ChatMessage,
   clearCurrentChat,
+  clearError,
   createChatAsync,
   fetchLatestChatAsync,
   fetchMessagesAsync,
   sendMessageAsync,
-  clearError,
-  ChatMessage,
-  AuthorType,
 } from "@/store/slices/chatSlice";
-import { useWebSocket } from "@/contexts/WebSocketContext";
-import { AvailableTools, ToolCallDisplay } from "@/components/ToolCallDisplay";
-import { ChatMessageAttachment } from "@/components/ChatMessageAttachment";
-import { SuggestedAction } from "@/components/SuggestedAction";
-import { useTheme } from "@/hooks/useTheme";
 import { ChatAttachment } from "@/types/attachment";
+import { MaterialIcons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Clipboard,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Markdown from "react-native-markdown-display";
 
 interface ChatViewProps {
   chatId?: string;
@@ -273,8 +273,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
     const markdownLinkRegex = /\[([^\]]*)\]\(([^)]+)\)/g;
 
     // Find all existing markdown links to avoid double-linking
-    const existingLinks: Array<{ start: number; end: number; url: string }> =
-      [];
+    const existingLinks: { start: number; end: number; url: string }[] = [];
     let match;
 
     while ((match = markdownLinkRegex.exec(text)) !== null) {

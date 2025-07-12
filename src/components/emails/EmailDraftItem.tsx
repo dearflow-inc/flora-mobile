@@ -158,7 +158,6 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
           },
         ]}
       >
-        {/* Invisible gesture overlay - only covers right side */}
         <PanGestureHandler
           onGestureEvent={onGestureEvent}
           onHandlerStateChange={onHandlerStateChange}
@@ -166,52 +165,51 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
           activeOffsetX={[-5, 5]}
           failOffsetY={[-20, 20]}
         >
-          <View style={styles.gestureOverlay} />
-        </PanGestureHandler>
-        <TouchableOpacity
-          style={styles.draftTouchable}
-          onPress={() => onPress(toolExecution)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.draftContent}>
-            {/* Icon */}
-            <View style={styles.iconContainer}>
-              <MaterialIcons name="drafts" size={24} color={colors.primary} />
-            </View>
+          <TouchableOpacity
+            style={styles.draftTouchable}
+            onPress={() => onPress(toolExecution)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.draftContent}>
+              {/* Icon */}
+              <View style={styles.iconContainer}>
+                <MaterialIcons name="drafts" size={24} color={colors.primary} />
+              </View>
 
-            {/* Content */}
-            <View style={styles.contentContainer}>
-              {/* Subject */}
-              <Text style={styles.subject} numberOfLines={1}>
-                {emailData.subject || "No subject"}
-              </Text>
-
-              {/* Recipients */}
-              <Text style={styles.recipients} numberOfLines={1}>
-                To: {getRecipientsText()}
-              </Text>
-
-              {/* Preview */}
-              {emailData.body && (
-                <Text style={styles.preview} numberOfLines={2}>
-                  {emailData.body.replace(/<[^>]*>/g, "")}
+              {/* Content */}
+              <View style={styles.contentContainer}>
+                {/* Subject */}
+                <Text style={styles.subject} numberOfLines={1}>
+                  {emailData.subject || "No subject"}
                 </Text>
-              )}
-            </View>
 
-            {/* Timestamp */}
-            <View style={styles.timestampContainer}>
-              <Text style={styles.timestamp}>
-                {formatTimestamp(toolExecution.createdAt)}
-              </Text>
-              <MaterialIcons
-                name="chevron-right"
-                size={20}
-                color={colors.textSecondary}
-              />
+                {/* Recipients */}
+                <Text style={styles.recipients} numberOfLines={1}>
+                  To: {getRecipientsText()}
+                </Text>
+
+                {/* Preview */}
+                {emailData.body && (
+                  <Text style={styles.preview} numberOfLines={2}>
+                    {emailData.body.replace(/<[^>]*>/g, "")}
+                  </Text>
+                )}
+              </View>
+
+              {/* Timestamp */}
+              <View style={styles.timestampContainer}>
+                <Text style={styles.timestamp}>
+                  {formatTimestamp(toolExecution.createdAt)}
+                </Text>
+                <MaterialIcons
+                  name="chevron-right"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </PanGestureHandler>
       </Animated.View>
     </View>
   );
@@ -222,15 +220,6 @@ const createStyles = (colors: any) =>
     draftItemContainer: {
       position: "relative",
       overflow: "hidden",
-    },
-    gestureOverlay: {
-      position: "absolute",
-      top: 0,
-      left: 30,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "transparent",
-      zIndex: 10,
     },
     draftItem: {
       backgroundColor: colors.surface,

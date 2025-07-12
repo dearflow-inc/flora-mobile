@@ -1,7 +1,7 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { chatService } from "@/services/chatService";
 import { ChatAttachment } from "@/types/attachment";
 import { ChatMessageSuggestedAction } from "@/types/suggestedAction";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export enum AuthorType {
   PROFILE = "profile",
@@ -169,6 +169,47 @@ export const sendMessageAsync = createAsyncThunk<
     return rejectWithValue(error.message || "Failed to send message");
   }
 });
+
+export const closeChatAsync = createAsyncThunk<
+  void,
+  string,
+  { rejectValue: string }
+>("chat/closeChat", async (chatId, { rejectWithValue }) => {
+  try {
+    await chatService.closeChat(chatId);
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Failed to close chat");
+  }
+});
+
+export const clearChatAndCreateNewAsync = createAsyncThunk<
+  Chat,
+  { participants: Author[]; aiInitConversation?: boolean },
+  { rejectValue: string }
+>(
+  "chat/clearChatAndCreateNew",
+  async (params, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const currentChatId = state.chat.currentChatId;
+
+      // Close the current chat if it exists
+      if (currentChatId) {
+        await chatService.closeChat(currentChatId).catch((err) => {});
+      }
+
+      // Create a new chat with the same participants
+      return await chatService.createChat(
+        params.participants,
+        params.aiInitConversation
+      );
+    } catch (error: any) {
+      return rejectWithValue(
+        error.message || "Failed to clear chat and create new"
+      );
+    }
+  }
+);
 
 export const chatSlice = createSlice({
   name: "chat",
@@ -342,6 +383,39 @@ export const chatSlice = createSlice({
       .addCase(sendMessageAsync.rejected, (state, action) => {
         state.isSendingMessage = false;
         state.error = action.payload || "Failed to send message";
+      })
+      // Close Chat
+      .addCase(closeChatAsync.pending, (state) => {
+        state.isSendingMessage = true; // Indicate a pending action
+        state.error = null;
+      })
+      .addCase(closeChatAsync.fulfilled, (state, action) => {
+        state.isSendingMessage = false;
+        state.error = null;
+        // Optionally, clear current chat or update state if chat is closed
+        state.currentChat = null;
+        state.currentChatId = null;
+        state.messages = [];
+      })
+      .addCase(closeChatAsync.rejected, (state, action) => {
+        state.isSendingMessage = false;
+        state.error = action.payload || "Failed to close chat";
+      })
+      // Clear Chat and Create New
+      .addCase(clearChatAndCreateNewAsync.pending, (state) => {
+        state.isCreatingChat = true;
+        state.error = null;
+      })
+      .addCase(clearChatAndCreateNewAsync.fulfilled, (state, action) => {
+        state.isCreatingChat = false;
+        state.currentChat = action.payload;
+        state.currentChatId = action.payload.id;
+        state.messages = [];
+        state.error = null;
+      })
+      .addCase(clearChatAndCreateNewAsync.rejected, (state, action) => {
+        state.isCreatingChat = false;
+        state.error = action.payload || "Failed to clear chat and create new";
       });
   },
 });
