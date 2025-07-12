@@ -11,6 +11,7 @@ import {
   ScrollView,
   Platform,
   Keyboard,
+  useWindowDimensions,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -24,9 +25,15 @@ import {
   clearError,
   clearCurrentTodo,
 } from "@/store/slices/todoSlice";
+import {
+  fetchEmailsByThreadIdAsync,
+  fetchEmailByIdAsync,
+} from "@/store/slices/emailSlice";
 import { Todo, TodoState } from "@/types/todo";
+import { Email } from "@/types/email";
 import { AppStackParamList } from "@/types/navigation";
 import { useTheme } from "@/hooks/useTheme";
+import { EmailContextView } from "@/components/context/EmailContextView";
 
 type TodoDetailScreenNavigationProp = NativeStackNavigationProp<
   AppStackParamList,
@@ -49,8 +56,12 @@ export const TodoDetailScreen = () => {
   const [title, setTitle] = useState("");
   const [deadline, setDeadline] = useState("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [contextData, setContextData] = useState<{
+    emails?: Email[];
+  }>({});
 
   const styles = createStyles(colors);
+  const { width, height } = useWindowDimensions();
 
   useEffect(() => {
     if (todoId) {
@@ -91,6 +102,62 @@ export const TodoDetailScreen = () => {
       setHasUnsavedChanges(hasChanges);
     }
   }, [title, deadline, currentTodo]);
+
+  useEffect(() => {
+    if (currentTodo?.context) {
+      loadContextData();
+    }
+  }, [currentTodo?.context]);
+
+  const loadContextData = async () => {
+    if (!currentTodo?.context) return;
+
+    const emails: Email[] = [];
+
+    for (const contextItem of currentTodo.context) {
+      if (contextItem.type === "email" && contextItem.emailId) {
+        try {
+          // First get the email by ID
+          const emailResult = await dispatch(
+            fetchEmailByIdAsync(contextItem.emailId)
+          );
+          if (
+            emailResult.type === "emails/fetchEmailById/fulfilled" &&
+            emailResult.payload
+          ) {
+            const email = emailResult.payload as Email;
+            emails.push(email);
+
+            // If the email has a threadId, fetch the entire thread
+            if (email.threadId) {
+              const threadResult = await dispatch(
+                fetchEmailsByThreadIdAsync(email.threadId)
+              );
+              if (
+                threadResult.type ===
+                  "emails/fetchEmailsByThreadId/fulfilled" &&
+                threadResult.payload &&
+                Array.isArray(threadResult.payload)
+              ) {
+                // Add any additional emails from the thread that weren't already included
+                const additionalEmails = threadResult.payload.filter(
+                  (threadEmail: Email) =>
+                    !emails.some(
+                      (existingEmail) => existingEmail.id === threadEmail.id
+                    )
+                );
+                emails.push(...additionalEmails);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load email context:", error);
+        }
+      }
+    }
+
+    setContextData({ emails });
+  };
 
   const handleSave = async () => {
     if (!currentTodo) return;
@@ -230,29 +297,58 @@ export const TodoDetailScreen = () => {
         </View>
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.dueDateContainer}>
-          <MaterialIcons name="event" size={16} color={colors.textSecondary} />
-          <TextInput
-            style={styles.dueDateInput}
-            value={deadline}
-            onChangeText={setDeadline}
-            placeholder="Due date (YYYY-MM-DD)"
-            placeholderTextColor={colors.textSecondary}
-            keyboardType="numeric"
-          />
-        </View>
+      <View style={styles.contentContainer}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            <View style={styles.dueDateContainer}>
+              <MaterialIcons
+                name="event"
+                size={16}
+                color={colors.textSecondary}
+              />
+              <TextInput
+                style={styles.dueDateInput}
+                value={deadline}
+                onChangeText={setDeadline}
+                placeholder="Due date (YYYY-MM-DD)"
+                placeholderTextColor={colors.textSecondary}
+                keyboardType="numeric"
+              />
+            </View>
 
-        <TextInput
-          style={styles.noteInput}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Start typing your note..."
-          placeholderTextColor={colors.textSecondary}
-          multiline
-          textAlignVertical="top"
-          scrollEnabled={false}
-        />
+            <TextInput
+              style={styles.noteInput}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Start typing your note..."
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              textAlignVertical="top"
+              scrollEnabled={false}
+            />
+          </View>
+
+          {/* Context Section */}
+          {currentTodo.context && currentTodo.context.length > 0 && (
+            <View
+              style={[
+                styles.contextContainer,
+                {
+                  height: height - 490,
+                  overflow: "hidden",
+                },
+              ]}
+            >
+              {contextData.emails && contextData.emails.length > 0 && (
+                <EmailContextView emails={contextData.emails} />
+              )}
+            </View>
+          )}
+        </ScrollView>
       </View>
 
       <View style={styles.bottomActions}>
@@ -344,8 +440,17 @@ const createStyles = (colors: any) =>
     pendingStatusText: {
       color: "#FF9800",
     },
-    content: {
+    contentContainer: {
       flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContentContainer: {
+      flexGrow: 1,
+    },
+    content: {
       paddingHorizontal: 20,
       paddingTop: 16,
     },
@@ -365,12 +470,17 @@ const createStyles = (colors: any) =>
       padding: 0,
     },
     noteInput: {
-      flex: 1,
       fontSize: 16,
       color: colors.text,
       lineHeight: 24,
       padding: 0,
       margin: 0,
+      minHeight: 200,
+    },
+    contextContainer: {
+      backgroundColor: colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
     },
     bottomActions: {
       flexDirection: "row",

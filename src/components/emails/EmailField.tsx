@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useTheme } from "@/hooks/useTheme";
+import { Contact, ContactEmailAddress } from "@/types/contact";
+import { MaterialIcons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
+  ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
+  View,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/useTheme";
 import { ContactDropdown } from "./ContactDropdown";
-import { Contact, ContactEmailAddress } from "@/types/contact";
 
 export interface EmailRecipient {
   id: string;
@@ -224,8 +224,8 @@ export const EmailField: React.FC<EmailFieldProps> = ({
               style={[styles.recipientsScroll]}
               contentContainerStyle={styles.recipientsScrollContent}
             >
-              {recipients.map((recipient) => (
-                <View key={recipient.id} style={styles.recipientChip}>
+              {recipients.map((recipient, index) => (
+                <View key={recipient.id + index} style={styles.recipientChip}>
                   <Text style={styles.recipientChipText}>
                     {recipient.name || recipient.email}
                   </Text>
@@ -289,8 +289,11 @@ export const EmailField: React.FC<EmailFieldProps> = ({
                   style={styles.recipientsScroll}
                   contentContainerStyle={styles.recipientsScrollContent}
                 >
-                  {ccRecipients.map((recipient) => (
-                    <View key={recipient.id} style={styles.recipientChip}>
+                  {ccRecipients.map((recipient, index) => (
+                    <View
+                      key={recipient.id + index}
+                      style={styles.recipientChip}
+                    >
                       <Text style={styles.recipientChipText}>
                         {recipient.name || recipient.email}
                       </Text>
@@ -358,8 +361,11 @@ export const EmailField: React.FC<EmailFieldProps> = ({
                   style={styles.recipientsScroll}
                   contentContainerStyle={styles.recipientsScrollContent}
                 >
-                  {bccRecipients.map((recipient) => (
-                    <View key={recipient.id} style={styles.recipientChip}>
+                  {bccRecipients.map((recipient, index) => (
+                    <View
+                      key={recipient.id + index}
+                      style={styles.recipientChip}
+                    >
                       <Text style={styles.recipientChipText}>
                         {recipient.name || recipient.email}
                       </Text>

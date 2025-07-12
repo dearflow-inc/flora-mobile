@@ -1,13 +1,13 @@
+import { useTheme } from "@/hooks/useTheme";
+import { MaterialIcons } from "@expo/vector-icons";
 import React from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/useTheme";
 
 interface EmailActionBarProps {
   onAskAI: () => void;
@@ -20,6 +20,7 @@ interface EmailActionBarProps {
   isExecuting: boolean;
   hasFollowUp: boolean;
   disabled?: boolean;
+  sendButtonText?: string;
 }
 
 export const EmailActionBar: React.FC<EmailActionBarProps> = ({
@@ -33,10 +34,12 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
   isExecuting,
   hasFollowUp,
   disabled = false,
+  sendButtonText = "Send",
 }) => {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
+  const isLoading = isAskingAI || isSending || isExecuting;
   const isLoadingOrDisabled =
     isAskingAI || isSending || isExecuting || disabled;
 
@@ -47,7 +50,7 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
         <TouchableOpacity
           style={styles.actionButton}
           onPress={onAskAI}
-          disabled={isLoadingOrDisabled}
+          disabled={isLoading}
         >
           <MaterialIcons name="auto-awesome" size={20} color={colors.primary} />
         </TouchableOpacity>
@@ -56,7 +59,7 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
         <TouchableOpacity
           style={styles.actionButton}
           onPress={onRefresh}
-          disabled={isLoadingOrDisabled}
+          disabled={isLoading}
         >
           <MaterialIcons
             name="refresh"
@@ -69,7 +72,7 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
         <TouchableOpacity
           style={styles.actionButton}
           onPress={onFollowUp}
-          disabled={disabled}
+          disabled={isLoading}
         >
           <MaterialIcons
             name="schedule"
@@ -82,7 +85,7 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
         <TouchableOpacity
           style={styles.actionButton}
           onPress={onAttach}
-          disabled={disabled}
+          disabled={isLoading}
         >
           <MaterialIcons
             name="attach-file"
@@ -107,7 +110,7 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
           ) : (
             <>
               <MaterialIcons name="send" size={18} color="#FFFFFF" />
-              <Text style={styles.sendButtonText}>Send</Text>
+              <Text style={styles.sendButtonText}>{sendButtonText}</Text>
             </>
           )}
         </TouchableOpacity>

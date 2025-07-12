@@ -1,70 +1,69 @@
-import React, { useState, useEffect, useRef } from "react";
+import { AppDispatch, RootState } from "@/store";
 import {
-  View,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  SafeAreaView,
-  Animated,
-  Alert,
-  Text,
-} from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import {
-  PanGestureHandler,
-  State,
-  GestureHandlerRootView,
-} from "react-native-gesture-handler";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "@/store";
-import {
-  selectEmailDrafts,
-  createToolExecutionAsync,
-  fetchMyToolExecutionsAsync,
-} from "@/store/slices/toolExecutionSlice";
-import {
-  fetchMyEmailsAsync,
   fetchEmailsByIdsAsync,
+  fetchMyEmailsAsync,
 } from "@/store/slices/emailSlice";
-import {
-  fetchUserTasksAsync,
-  selectUserTasks,
-  selectUserTasksLoading,
-} from "@/store/slices/userTaskSlice";
 import {
   fetchMyScenarios,
   selectContextViews,
   selectScenariosLoading,
 } from "@/store/slices/scenariosSlice";
-import { useNavigation } from "@react-navigation/native";
 import {
+  createToolExecutionAsync,
+  fetchMyToolExecutionsAsync,
+  selectEmailDrafts,
+} from "@/store/slices/toolExecutionSlice";
+import {
+  fetchUserTasksAsync,
+  selectUserTasks,
+  selectUserTasksLoading,
+} from "@/store/slices/userTaskSlice";
+import { AuthorType, EmailLabel, EmailWithoutContent } from "@/types/email";
+import {
+  ParameterType,
   parseEmailDraftFromToolExecution,
   ToolEndpointAction,
-  ParameterType,
   ToolExecution,
 } from "@/types/toolExecution";
 import { UserTask, UserTaskType } from "@/types/userTask";
-import { AuthorType, EmailLabel, EmailWithoutContent } from "@/types/email";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  GestureHandlerRootView,
+  PanGestureHandler,
+  State,
+} from "react-native-gesture-handler";
+import { useDispatch, useSelector } from "react-redux";
 
 // Components
-import { Header, FloatingActionButton } from "@/components/ui";
-import {
-  TaskSidebar,
-  ContextFilter,
-  UserTaskItem,
-  EmptyState,
-} from "@/components/user-tasks";
 import { EmailDraftItem } from "@/components/emails/EmailDraftItem";
 import { EmailItem } from "@/components/emails/EmailItem";
+import { FloatingActionButton, Header } from "@/components/ui";
+import {
+  ContextFilter,
+  EmptyState,
+  TaskSidebar,
+  UserTaskItem,
+} from "@/components/user-tasks";
 
 // Hooks
-import { useTheme } from "@/hooks/useTheme";
-import { useSidebar } from "@/hooks/useSidebar";
 import { useContextViews } from "@/hooks/useContextViews";
+import { useSidebar } from "@/hooks/useSidebar";
 import { useSwipeHandler } from "@/hooks/useSwipeHandler";
+import { useTheme } from "@/hooks/useTheme";
 
 // Utils
-import { UserTaskFilter, getFilteredUserTasks } from "@/utils/taskUtils";
+import { getFilteredUserTasks, UserTaskFilter } from "@/utils/taskUtils";
 
 export const EmailsScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -362,17 +361,25 @@ export const EmailsScreen = () => {
     />
   );
 
-  const renderEmailDraft = ({ item }: { item: ToolExecution }) => (
-    <EmailDraftItem
-      key={item.id}
-      toolExecution={item}
-      onPress={(toolExecution) => {
-        navigation.navigate("ToolExecution", {
-          toolExecutionId: toolExecution.id,
-        });
-      }}
-    />
-  );
+  const renderEmailDraft = ({ item }: { item: ToolExecution }) => {
+    // Check if this draft has a referenceDfEmailId (indicating it's a reply)
+    const hasReferenceDfEmailId = item.input.some(
+      (param) => param.parameterId === "referenceDfEmailId" && param.value
+    );
+
+    return (
+      <EmailDraftItem
+        key={item.id}
+        toolExecution={item}
+        onPress={(toolExecution) => {
+          navigation.navigate("ToolExecution", {
+            toolExecutionId: toolExecution.id,
+            isReply: hasReferenceDfEmailId,
+          });
+        }}
+      />
+    );
+  };
 
   const renderEmail = ({ item }: { item: EmailWithoutContent }) => (
     <EmailItem
@@ -438,7 +445,7 @@ export const EmailsScreen = () => {
                   />
                   <Text style={styles.emptyStateTitle}>No Drafts</Text>
                   <Text style={styles.emptyStateText}>
-                    You don't have any email drafts yet.
+                    You do not have any email drafts yet.
                   </Text>
                 </View>
               )}
@@ -472,7 +479,7 @@ export const EmailsScreen = () => {
                   />
                   <Text style={styles.emptyStateTitle}>No Sent Emails</Text>
                   <Text style={styles.emptyStateText}>
-                    You haven't sent any emails yet.
+                    You have not sent any emails yet.
                   </Text>
                 </View>
               )}
@@ -506,7 +513,7 @@ export const EmailsScreen = () => {
                   />
                   <Text style={styles.emptyStateTitle}>No Trashed Emails</Text>
                   <Text style={styles.emptyStateText}>
-                    You don't have any trashed emails.
+                    You do not have any trashed emails.
                   </Text>
                 </View>
               )}

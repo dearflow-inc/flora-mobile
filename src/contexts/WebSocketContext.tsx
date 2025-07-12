@@ -135,7 +135,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     });
 
     connection.on("connect_error", (error) => {
-      console.error("WebSocket connection error:", error);
       localDispatch({
         type: "SET_CONNECTION",
         payload: {

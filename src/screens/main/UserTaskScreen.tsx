@@ -1,53 +1,49 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-  useWindowDimensions,
-} from "react-native";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "@/store";
+import { EmailContextView } from "@/components/context/EmailContextView";
 import { useTheme } from "@/hooks/useTheme";
+import { AppDispatch, RootState } from "@/store";
 import {
-  selectUserTaskById,
-  selectUserTasks,
-  completeUserTaskAsync,
-  updateUserTaskAsync,
-  updateUserTaskActionDataAsync,
-  setSelectedUserTask,
-  rateUserTaskAsync,
-  createUserTaskAsync,
-  deleteUserTaskAsync,
-  snoozeUserTaskAsync,
-  ignoreUserTaskAsync,
-} from "@/store/slices/userTaskSlice";
-import {
-  fetchEmailsByThreadIdAsync,
   fetchEmailByIdAsync,
+  fetchEmailsByThreadIdAsync,
 } from "@/store/slices/emailSlice";
 import {
-  UserTask,
-  UserTaskType,
-  UserTaskStatus,
-  UserTaskAction,
-  SystemReference,
-  UserTaskTypeData,
-  CreateUserTaskRequest,
-  CompleteUserTaskRequest,
-  UserTaskIgnoreReason,
-} from "@/types/userTask";
+  completeUserTaskAsync,
+  createUserTaskAsync,
+  deleteUserTaskAsync,
+  ignoreUserTaskAsync,
+  selectUserTaskById,
+  selectUserTasks,
+  setSelectedUserTask,
+  snoozeUserTaskAsync,
+  updateUserTaskActionDataAsync,
+} from "@/store/slices/userTaskSlice";
 import { Email } from "@/types/email";
 import { AppStackParamList } from "@/types/navigation";
-import { EmailContextView } from "@/components/context/EmailContextView";
+import {
+  CompleteUserTaskRequest,
+  CreateUserTaskRequest,
+  UserTask,
+  UserTaskIgnoreReason,
+  UserTaskStatus,
+  UserTaskType,
+  UserTaskTypeData,
+} from "@/types/userTask";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 // import { VideoContextView } from "@/components/context/VideoContextView";
 import { TaskActionComponent } from "@/components/actions/TaskActionComponent";
 import { actionsByUserTaskType } from "@/utils/userTaskActions";
@@ -351,6 +347,9 @@ export const UserTaskScreen = () => {
           },
         })
       ).unwrap();
+
+      // Navigate back to task overview after successful completion
+      navigation.goBack();
     } catch (error) {
       Alert.alert("Error", "Failed to complete task. Please try again.");
     }
@@ -499,7 +498,7 @@ export const UserTaskScreen = () => {
     );
 
     // Format the suggestion text
-    return `Flora prepared a ${actionDescriptions
+    return `Flora prepared an ${actionDescriptions
       .map((action) => action.toLowerCase())
       .join(", ")}`;
   };
@@ -631,12 +630,14 @@ export const UserTaskScreen = () => {
           <TouchableOpacity style={styles.headerButton} onPress={handleDelete}>
             <MaterialIcons name="delete" size={24} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleMarkUnread}
-          >
-            <MaterialIcons name="markunread" size={24} color={colors.text} />
-          </TouchableOpacity>
+          {userTask.status !== UserTaskStatus.SNOOZE && (
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={handleMarkUnread}
+            >
+              <MaterialIcons name="schedule" size={24} color={colors.text} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={styles.headerButton} onPress={handleMenu}>
             <MaterialIcons name="more-vert" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -662,18 +663,6 @@ export const UserTaskScreen = () => {
               <Text style={styles.taskTitle}>
                 {userTask.title || userTask.description}
               </Text>
-              {userTask.status === UserTaskStatus.PENDING && (
-                <TouchableOpacity
-                  style={styles.starButton}
-                  onPress={() => handleToggleImportant()}
-                >
-                  <MaterialIcons
-                    name="star"
-                    size={24}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              )}
             </View>
 
             {userTask.title && userTask.description !== userTask.title && (
@@ -687,7 +676,8 @@ export const UserTaskScreen = () => {
       </View>
 
       {/* Fixed Bottom Buttons */}
-      {userTask.status === UserTaskStatus.PENDING && (
+      {(userTask.status === UserTaskStatus.PENDING ||
+        userTask.status === UserTaskStatus.SNOOZE) && (
         <View
           style={[
             styles.bottomButtonsContainer,

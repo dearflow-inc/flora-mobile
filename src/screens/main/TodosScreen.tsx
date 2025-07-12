@@ -57,7 +57,7 @@ export const TodosScreen = () => {
   }, [error, dispatch]);
 
   const loadTodos = async (refresh: boolean = false) => {
-    const page = refresh ? 1 : currentPage;
+    const page = refresh ? 0 : currentPage;
     try {
       await dispatch(
         fetchTodosAsync({

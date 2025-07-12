@@ -30,7 +30,14 @@ export type AppStackParamList = {
   Settings: undefined;
   ContactSupport: undefined;
   TodoDetail: { todoId: string };
-  ToolExecution: { toolExecutionId: string };
+  ToolExecution: {
+    toolExecutionId: string;
+    isReplyEdit?: boolean;
+    isReply?: boolean;
+    actionId?: string;
+    userTaskId?: string;
+    canBeDeleted?: boolean;
+  };
   UserTaskDetail: { userTaskId: string };
   EmailThreadDetail: { threadId: string };
 };

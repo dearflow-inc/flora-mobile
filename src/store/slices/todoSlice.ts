@@ -173,16 +173,16 @@ export const todoSlice = createSlice({
         state.isLoading = false;
         const { todos, total } = action.payload;
 
-        if (action.meta.arg.refresh || action.meta.arg.page === 1) {
+        if (action.meta.arg.refresh || action.meta.arg.page === 0) {
           state.todos = todos;
-          state.currentPage = 1;
+          state.currentPage = 0;
         } else {
           state.todos = [...state.todos, ...todos];
         }
 
         state.totalTodos = total;
         state.hasMore = state.todos.length < total;
-        state.currentPage = action.meta.arg.page || 1;
+        state.currentPage = action.meta.arg.page || 0;
       })
       .addCase(fetchTodosAsync.rejected, (state, action) => {
         state.isLoading = false;

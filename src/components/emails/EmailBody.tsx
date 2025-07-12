@@ -13,6 +13,7 @@ interface EmailBodyProps {
   onSubjectChange: (text: string) => void;
   onBodyChange: (text: string) => void;
   disabled?: boolean;
+  hideSubject?: boolean;
 }
 
 export const EmailBody: React.FC<EmailBodyProps> = ({
@@ -21,6 +22,7 @@ export const EmailBody: React.FC<EmailBodyProps> = ({
   onSubjectChange,
   onBodyChange,
   disabled = false,
+  hideSubject = false,
 }) => {
   const { colors } = useTheme();
   const [bodyHeight, setBodyHeight] = useState(100); // Start with minHeight
@@ -89,14 +91,16 @@ export const EmailBody: React.FC<EmailBodyProps> = ({
   return (
     <View style={styles.container}>
       {/* Subject */}
-      <TextInput
-        style={[styles.subjectInput, disabled && styles.inputDisabled]}
-        value={subject}
-        onChangeText={onSubjectChange}
-        placeholder="Subject"
-        placeholderTextColor={colors.textSecondary}
-        editable={!disabled}
-      />
+      {!hideSubject && (
+        <TextInput
+          style={[styles.subjectInput, disabled && styles.inputDisabled]}
+          value={subject}
+          onChangeText={onSubjectChange}
+          placeholder="Subject"
+          placeholderTextColor={colors.textSecondary}
+          editable={!disabled}
+        />
+      )}
 
       <View
         style={[styles.richTextContainer, disabled && styles.inputDisabled]}

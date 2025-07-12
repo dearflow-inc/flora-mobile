@@ -1,20 +1,26 @@
+import { CustomAvatar } from "@/components/ui/CustomAvatar";
+import { useTheme } from "@/hooks/useTheme";
+import { AppDispatch } from "@/store";
+import { markEmailAsReadAsync } from "@/store/slices/emailSlice";
+import { createToolExecutionAsync } from "@/store/slices/toolExecutionSlice";
+import { AuthorType, Email } from "@/types/email";
+import { AppStackParamList } from "@/types/navigation";
+import { ParameterType, ToolEndpointAction } from "@/types/toolExecution";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
+  Alert,
   ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
   useWindowDimensions,
+  View,
 } from "react-native";
 import { WebView } from "react-native-webview";
-import { MaterialIcons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
-import { useTheme } from "@/hooks/useTheme";
-import { Email } from "@/types/email";
-import { CustomAvatar } from "@/components/ui/CustomAvatar";
-import { markEmailAsReadAsync } from "@/store/slices/emailSlice";
-import { AppDispatch } from "@/store";
 
 interface EmailContextViewProps {
   emails: Email[];
@@ -28,6 +34,8 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
   const { colors, isDark } = useTheme();
   const { width, height } = useWindowDimensions();
   const dispatch = useDispatch<AppDispatch>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const styles = createStyles(colors, height);
 
   // State to track which emails are expanded
@@ -60,6 +68,106 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
     });
   };
 
+  // Handle reply to email
+  const handleReply = async (email: Email) => {
+    try {
+      // Create a new tool execution for composing a reply
+      const toolExecution = await dispatch(
+        createToolExecutionAsync({
+          toolEndpointAction: ToolEndpointAction.GMAIL_SEND,
+          input: [
+            {
+              parameterId: "to",
+              type: ParameterType.ARRAY,
+              value: JSON.stringify([
+                {
+                  id:
+                    email.from.meta?.email ||
+                    email.from.externalId ||
+                    "unknown",
+                  email: email.from.meta?.email || "unknown@example.com",
+                },
+                ...email.to
+                  .filter((item) => item.type !== AuthorType.PROFILE)
+                  .map((email) => ({
+                    id: email.externalId,
+                    email: email.meta?.email,
+                  })),
+              ]),
+            },
+            {
+              parameterId: "subject",
+              type: ParameterType.STRING,
+              value: email.subject ? `Re: ${email.subject}` : "Re: ",
+            },
+            {
+              parameterId: "threadId",
+              type: ParameterType.STRING,
+              value: email.threadId,
+            },
+            {
+              parameterId: "referenceEmailId",
+              type: ParameterType.STRING,
+              value: email.emailId,
+            },
+            {
+              parameterId: "externalEmailId",
+              type: ParameterType.STRING,
+              value: email.externalIdentifier.resourceId,
+            },
+            {
+              parameterId: "referenceDfEmailId",
+              type: ParameterType.STRING,
+              value: email.id,
+            },
+            {
+              parameterId: "body",
+              type: ParameterType.ARRAY,
+              value: JSON.stringify([
+                {
+                  body: "",
+                  type: "text/html",
+                },
+              ]),
+            },
+            {
+              parameterId: "cc",
+              type: ParameterType.ARRAY,
+              value: JSON.stringify(
+                email.cc
+                  .filter((item) => item.type !== AuthorType.PROFILE)
+                  .map((email) => ({
+                    id: email.externalId,
+                    email: email.meta?.email,
+                  }))
+              ),
+            },
+            {
+              parameterId: "bcc",
+              type: ParameterType.ARRAY,
+              value: "[]",
+            },
+            {
+              parameterId: "attachments",
+              type: ParameterType.ARRAY,
+              value: "[]",
+            },
+          ],
+          internalListeners: [],
+        })
+      ).unwrap();
+
+      // Navigate to the tool execution screen
+      navigation.navigate("ToolExecution", {
+        toolExecutionId: toolExecution.id,
+        isReplyEdit: true,
+        canBeDeleted: true,
+      });
+    } catch (error) {
+      Alert.alert("Error", "Failed to create reply. Please try again.");
+    }
+  };
+
   // Mark emails as read when component renders
   useEffect(() => {
     if (emails && emails.length > 0) {
@@ -78,7 +186,7 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
   // Get the available width for the WebView (account for padding)
   const getWebViewWidth = () => {
     // Account for horizontal padding from emailItem (16px on each side)
-    return width - 64;
+    return width - 32;
   };
 
   // Calculate dynamic height for WebView based on available space
@@ -89,13 +197,15 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
     const buffer = 150;
 
     // Use a reasonable portion of the screen height, but cap it
-    const minHeight = 200; // Minimum height to ensure content is visible
+    const minHeight = 800; // Minimum height to ensure content is visible
 
     return Math.max(
       minHeight,
       height - headerHeight - indicatorHeight - buffer - extraHeightDeduction
     );
   };
+
+  const [webViewHeight, setWebViewHeight] = useState(200);
 
   if (!emails || emails.length === 0) {
     return (
@@ -181,7 +291,6 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
       : contentToRender;
 
     // State to track WebView height
-    const [webViewHeight, setWebViewHeight] = useState(200);
 
     // Show full content for newest email, truncated for others
     if (isOpen) {
@@ -462,7 +571,10 @@ export const EmailContextView: React.FC<EmailContextViewProps> = ({
                     size={20}
                     color={colors.textSecondary}
                   />
-                  <TouchableOpacity style={styles.actionButton}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleReply(email)}
+                  >
                     <MaterialIcons
                       name="reply"
                       size={20}
@@ -616,7 +728,7 @@ const createStyles = (colors: any, height: number) =>
       minHeight: 0,
     },
     webViewContainer: {
-      minHeight: 100,
+      minHeight: 800,
     },
     webView: {
       backgroundColor: "transparent",
@@ -630,5 +742,10 @@ const createStyles = (colors: any, height: number) =>
       fontSize: 12,
       color: colors.textSecondary,
       fontStyle: "italic",
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
     },
   });

@@ -1,23 +1,40 @@
-import React, { useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  ActivityIndicator,
-} from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "@/store";
-import { fetchToolExecutionByIdAsync } from "@/store/slices/toolExecutionSlice";
-import { ToolEndpointAction } from "@/types/toolExecution";
+import { AppDispatch, RootState } from "@/store";
+import {
+  deleteToolExecutionAsync,
+  fetchToolExecutionByIdAsync,
+} from "@/store/slices/toolExecutionSlice";
+import {
+  parseEmailDraftFromToolExecution,
+  ToolEndpointAction,
+} from "@/types/toolExecution";
+import { MaterialIcons } from "@expo/vector-icons";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import { ComposeEmail } from "../../components/tool-execution/ComposeEmail";
+import { EditReplyEmail } from "../../components/tool-execution/EditReplyEmail";
 
 type ToolExecutionScreenParams = {
   toolExecutionId: string;
+  isReplyEdit?: boolean;
+  isReply?: boolean;
+  actionId?: string;
+  userTaskId?: string;
+  canBeDeleted?: boolean;
 };
 
 export const ToolExecutionScreen = () => {
@@ -25,11 +42,24 @@ export const ToolExecutionScreen = () => {
   const route = useRoute();
   const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
-  const { toolExecutionId } = (route.params as ToolExecutionScreenParams) || {};
+  const {
+    toolExecutionId,
+    isReplyEdit,
+    isReply,
+    actionId,
+    userTaskId,
+    canBeDeleted,
+  } = (route.params as ToolExecutionScreenParams) || {};
+  const { width } = useWindowDimensions();
 
   const { currentToolExecution, isLoading } = useSelector(
     (state: RootState) => state.toolExecutions
   );
+
+  // Change tracking state
+  const [hasChanges, setHasChanges] = useState(false);
+  const hasChangesRef = useRef(false);
+  const isInitialRender = useRef(true);
 
   const styles = createStyles(colors);
 
@@ -39,6 +69,35 @@ export const ToolExecutionScreen = () => {
     }
   }, [toolExecutionId, dispatch]);
 
+  // Keep the ref in sync with the state
+  useEffect(() => {
+    hasChangesRef.current = hasChanges;
+  }, [hasChanges]);
+
+  // Track when user leaves the screen
+  useFocusEffect(
+    React.useCallback(() => {
+      // When screen comes into focus, reset change tracking
+      isInitialRender.current = false;
+
+      return () => {
+        // When screen loses focus, check if we should delete the tool execution
+        if (
+          toolExecutionId &&
+          !hasChangesRef.current &&
+          canBeDeleted &&
+          !isInitialRender.current
+        ) {
+          console.log("Deleting unused tool execution");
+
+          dispatch(deleteToolExecutionAsync(toolExecutionId)).catch((error) => {
+            console.warn("Failed to delete unused tool execution:", error);
+          });
+        }
+      };
+    }, [toolExecutionId, canBeDeleted, dispatch])
+  );
+
   const handleBack = () => {
     navigation.goBack();
   };
@@ -47,8 +106,29 @@ export const ToolExecutionScreen = () => {
     navigation.goBack();
   };
 
+  const handleDidChange = () => {
+    console.log("did change!");
+    setHasChanges(true);
+    hasChangesRef.current = true;
+    isInitialRender.current = false;
+  };
+
   const getScreenTitle = () => {
     if (!currentToolExecution) return "Tool Execution";
+
+    if (isReplyEdit || isReply) {
+      // Try to get the email subject from the tool execution
+      try {
+        const emailDraft =
+          parseEmailDraftFromToolExecution(currentToolExecution);
+        if (emailDraft?.subject) {
+          return emailDraft.subject;
+        }
+      } catch (error) {
+        console.warn("Failed to parse email draft for title:", error);
+      }
+      return isReplyEdit ? "Edit Reply" : "Reply";
+    }
 
     switch (currentToolExecution.toolEndpointAction) {
       case ToolEndpointAction.GMAIL_SEND:
@@ -60,6 +140,18 @@ export const ToolExecutionScreen = () => {
 
   const renderToolExecutionContent = () => {
     if (!currentToolExecution) return null;
+    // Handle reply editing mode
+    if (isReplyEdit && actionId && userTaskId) {
+      return (
+        <EditReplyEmail
+          toolExecution={currentToolExecution}
+          actionId={actionId}
+          userTaskId={userTaskId}
+          onFinishEditing={handleSendComplete}
+          onDidChange={handleDidChange}
+        />
+      );
+    }
 
     switch (currentToolExecution.toolEndpointAction) {
       case ToolEndpointAction.GMAIL_SEND:
@@ -67,6 +159,7 @@ export const ToolExecutionScreen = () => {
           <ComposeEmail
             toolExecution={currentToolExecution}
             onSend={handleSendComplete}
+            onDidChange={handleDidChange}
           />
         );
       default:
@@ -120,7 +213,12 @@ export const ToolExecutionScreen = () => {
         <TouchableOpacity style={styles.headerButton} onPress={handleBack}>
           <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{getScreenTitle()}</Text>
+        <Text
+          style={[styles.headerTitle, { maxWidth: width - 100 }]}
+          numberOfLines={1}
+        >
+          {getScreenTitle()}
+        </Text>
         <View style={styles.headerButton} />
       </View>
 
@@ -177,6 +275,7 @@ const createStyles = (colors: any) =>
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
+      marginRight: 12,
     },
     unsupportedContainer: {
       flex: 1,

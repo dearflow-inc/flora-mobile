@@ -1,17 +1,17 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { RootState } from "../index";
 import { userTaskService } from "@/services/userTaskService";
 import {
+  CompleteUserTaskRequest,
+  CreateUserTaskRequest,
+  IgnoreUserTaskRequest,
+  RateUserTaskRequest,
+  UpdateUserTaskActionDataRequest,
+  UpdateUserTaskRequest,
   UserTask,
   UserTasksAnalytics,
   UserTaskStatus,
-  CreateUserTaskRequest,
-  UpdateUserTaskRequest,
-  UpdateUserTaskActionDataRequest,
-  IgnoreUserTaskRequest,
-  CompleteUserTaskRequest,
-  RateUserTaskRequest,
 } from "@/types/userTask";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from "../index";
 
 interface UserTaskState {
   userTasks: UserTask[];

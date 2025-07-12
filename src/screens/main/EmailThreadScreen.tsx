@@ -46,7 +46,7 @@ export const EmailThreadScreen = () => {
     emails?: Email[];
   }>({});
 
-  const { threadEmails, isLoading } = useSelector(
+  const { threadEmails, isLoading: isLoadingEmails } = useSelector(
     (state: RootState) => state.emails
   );
 
@@ -88,7 +88,25 @@ export const EmailThreadScreen = () => {
   };
 
   const renderContext = () => {
-    if (!contextData.emails || contextData.emails.length === 0) {
+    // Show loading state when initially loading and no emails are available
+    if (
+      isLoadingEmails ||
+      !contextData.emails ||
+      contextData.emails.length === 0
+    ) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading email thread...</Text>
+        </View>
+      );
+    }
+
+    // Show empty state when not loading and no emails found
+    if (
+      !isLoadingEmails &&
+      (!contextData.emails || contextData.emails.length === 0)
+    ) {
       return (
         <View style={styles.emptyStateContainer}>
           <MaterialIcons name="email" size={64} color={colors.textSecondary} />
@@ -100,6 +118,7 @@ export const EmailThreadScreen = () => {
       );
     }
 
+    // Show EmailContextView with emails and loading state
     return (
       <View
         style={[
@@ -111,21 +130,10 @@ export const EmailThreadScreen = () => {
           },
         ]}
       >
-        <EmailContextView emails={contextData.emails} />
+        <EmailContextView emails={contextData.emails || []} />
       </View>
     );
   };
-
-  if (isLoading && !contextData.emails) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading email thread...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   if (!threadId) {
     return (

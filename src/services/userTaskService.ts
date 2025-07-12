@@ -1,18 +1,17 @@
-import axios, { AxiosInstance } from "axios";
+import { API_CONFIG } from "@/config/api";
 import {
-  UserTask,
-  UserTasksResponse,
+  CompleteUserTaskRequest,
+  CreateUserTaskRequest,
+  IgnoreUserTaskRequest,
+  RateUserTaskRequest,
+  UpdateUserTaskActionDataRequest,
+  UpdateUserTaskRequest,
   UserTaskResponse,
   UserTasksAnalyticsResponse,
-  CreateUserTaskRequest,
-  UpdateUserTaskRequest,
-  UpdateUserTaskActionDataRequest,
-  IgnoreUserTaskRequest,
-  CompleteUserTaskRequest,
-  RateUserTaskRequest,
+  UserTasksResponse,
   UserTaskStatus,
 } from "@/types/userTask";
-import { API_CONFIG } from "@/config/api";
+import axios, { AxiosInstance } from "axios";
 
 class UserTaskService {
   private api: AxiosInstance;
@@ -265,6 +264,22 @@ class UserTaskService {
     } catch (error: any) {
       throw new Error(
         error.response?.data?.message || "Failed to snooze user task"
+      );
+    }
+  }
+
+  /**
+   * Unsnooze user task
+   */
+  async unsnoozeUserTask(userTaskId: string): Promise<UserTaskResponse> {
+    try {
+      const response = await this.api.post<UserTaskResponse>(
+        `/user-tasks/${userTaskId}/unsnooze`
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Failed to unsnooze user task"
       );
     }
   }

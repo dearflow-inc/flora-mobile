@@ -13,6 +13,7 @@ export enum TodoSortBy {
 export interface SystemReference {
   id: string;
   type: string;
+  emailId?: string;
   externalId?: string;
 }
 

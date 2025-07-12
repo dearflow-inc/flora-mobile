@@ -1,11 +1,8 @@
-import { useContacts } from "@/hooks/useContacts";
 import { useTheme } from "@/hooks/useTheme";
 import { regenerateTextService } from "@/services/regenerateTextService";
-import { AppDispatch, RootState } from "@/store";
-import {
-  executeToolExecutionAsync,
-  updateToolExecutionAsync,
-} from "@/store/slices/toolExecutionSlice";
+import { AppDispatch } from "@/store";
+import { updateToolExecutionAsync } from "@/store/slices/toolExecutionSlice";
+import { updateUserTaskActionDataAsync } from "@/store/slices/userTaskSlice";
 import {
   createEmailDraftParameters,
   EmailDraftData,
@@ -22,7 +19,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 // Import our new components
 import { AutoSaveIndicator } from "../emails/AutoSaveIndicator";
@@ -32,22 +29,25 @@ import { EmailField } from "../emails/EmailField";
 import { AIModal, FollowUpModal } from "../emails/EmailModals";
 import { FollowUpIndicator } from "../emails/FollowUpIndicator";
 
-interface ComposeEmailProps {
+interface EditReplyEmailProps {
   toolExecution: ToolExecution;
-  onSend?: () => void;
+  actionId: string;
+  userTaskId: string;
+  onFinishEditing?: () => void;
   onDidChange?: () => void;
 }
 
-export const ComposeEmail: React.FC<ComposeEmailProps> = ({
+export const EditReplyEmail: React.FC<EditReplyEmailProps> = ({
   toolExecution,
-  onSend,
+  actionId,
+  userTaskId,
+  onFinishEditing,
   onDidChange,
 }) => {
   const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
-  const { contacts } = useContacts();
 
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
 
   // State management
   const [emailData, setEmailData] = useState<EmailDraftData>({
@@ -62,11 +62,10 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
     },
   });
 
-  const [isSending, setIsSending] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [aiQuestion, setAiQuestion] = useState("");
-  const [showAiModal, setShowAiModal] = useState(true);
+  const [showAiModal, setShowAiModal] = useState(false);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -82,10 +81,6 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
     }
   };
 
-  const { isUpdating, isExecuting } = useSelector(
-    (state: RootState) => state.toolExecutions
-  );
-
   const styles = createStyles(colors);
 
   // Load existing data
@@ -94,12 +89,12 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
     if (parsedData) {
       setEmailData(parsedData);
     }
-  }, [toolExecution.id]);
+  }, [toolExecution?.id]);
 
   // Auto-save functionality
   useEffect(() => {
     const autoSave = async () => {
-      if (!emailData.to.length && !emailData.subject && !emailData.body) return;
+      if (!emailData.body) return;
 
       try {
         const parameters = createEmailDraftParameters(emailData);
@@ -152,46 +147,25 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
     });
   };
 
-  const handleSelectContact = (field: "to" | "cc" | "bcc") => {
-    // Contact selection is now handled by the dropdown in EmailField
-    console.log(`Contact selection for ${field} is handled by dropdown`);
-  };
-
-  // Check if send button should be disabled
-  const isSendDisabled =
-    !emailData.to.length || !emailData.subject.trim() || !emailData.body.trim();
-
-  const handleSendEmail = async () => {
-    if (!emailData.to.length) {
-      Alert.alert("Error", "Please enter at least one recipient email address");
-      return;
-    }
-
-    if (!emailData.subject.trim()) {
-      Alert.alert("Error", "Please enter email subject");
-      return;
-    }
-
-    setIsSending(true);
+  const handleFinishEditing = async () => {
     try {
-      const parameters = createEmailDraftParameters(emailData);
+      // Update the action data with the new reply content
       await dispatch(
-        executeToolExecutionAsync({
-          toolExecutionId: toolExecution.id,
-          data: { input: parameters },
+        updateUserTaskActionDataAsync({
+          userTaskId: userTaskId,
+          request: {
+            actionId: actionId,
+            actionData: {
+              reply: emailData.body,
+            },
+          },
         })
       ).unwrap();
 
-      onSend?.();
+      onFinishEditing?.();
     } catch (error) {
-      Alert.alert("Error", "Failed to send email. Please try again.");
-    } finally {
-      setIsSending(false);
+      Alert.alert("Error", "Failed to save reply. Please try again.");
     }
-  };
-
-  const handleSendClick = () => {
-    handleSendEmail();
   };
 
   const handleAskAI = async () => {
@@ -229,7 +203,7 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
       const response = await regenerateTextService.regenerateText({
         originalText: emailData.body,
         sectionToReplace: emailData.body, // Replace entire body for regenerate
-        modificationInstructions: "Improve this email",
+        modificationInstructions: "Improve this reply",
         formerVersions: [],
       });
 
@@ -298,7 +272,7 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
           }}
           onAddRecipient={(recipient) => addEmail("to", recipient)}
           onRemoveRecipient={(id) => removeEmail("to", id)}
-          onSelectContact={() => handleSelectContact("to")}
+          onSelectContact={() => {}}
           placeholder="Type..."
           showCcBcc={true}
           isDropdownOpen={isDropdownOpen}
@@ -321,12 +295,13 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
           onDropdownOpen={setIsDropdownOpen}
         />
 
-        {/* Email Body */}
+        {/* Email Body - No subject field for reply editing */}
         <EmailBody
           subject={emailData.subject}
           body={emailData.body}
-          onSubjectChange={(text) => updateEmailData({ subject: text })}
+          onSubjectChange={() => {}} // No-op for reply editing
           onBodyChange={(text) => updateEmailData({ body: text })}
+          hideSubject={true}
         />
 
         {/* Follow-up Settings */}
@@ -342,18 +317,19 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
       {/* Auto-save indicator - positioned at bottom */}
       <AutoSaveIndicator lastSaved={lastSaved} />
 
-      {/* Action Bar */}
+      {/* Action Bar - Modified for reply editing */}
       <EmailActionBar
         onAskAI={() => setShowAiModal(true)}
         onRefresh={handleRefreshContent}
         onFollowUp={() => setShowFollowUpModal(true)}
         onAttach={handleAttach}
-        onSend={handleSendClick}
+        onSend={handleFinishEditing}
         isAskingAI={isAskingAI}
-        isSending={isSending}
-        isExecuting={isExecuting}
+        isSending={false}
+        isExecuting={false}
         hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
-        disabled={isSendDisabled}
+        disabled={!emailData.body.trim()}
+        sendButtonText="Finish Editing"
       />
 
       {/* Modals */}

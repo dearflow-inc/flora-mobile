@@ -1,17 +1,17 @@
+import { useTheme } from "@/hooks/useTheme";
+import { MaterialIcons } from "@expo/vector-icons";
 import React from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Modal,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/useTheme";
 
 interface AIModalProps {
   visible: boolean;

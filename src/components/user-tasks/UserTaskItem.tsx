@@ -1,27 +1,26 @@
-import React, { useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-  useWindowDimensions,
-  Dimensions,
-  Alert,
-} from "react-native";
-import { PanGestureHandler, State } from "react-native-gesture-handler";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/useTheme";
 import { CustomAvatar } from "@/components/ui/CustomAvatar";
+import { useTheme } from "@/hooks/useTheme";
+import { EmailLabel, EmailWithoutContent } from "@/types/email";
 import { UserTask } from "@/types/userTask";
-import { EmailWithoutContent, EmailLabel } from "@/types/email";
 import {
-  getEmailSenderInfo,
-  getTaskActions,
   formatTimestamp,
   getEmailFromContext,
+  getEmailSenderInfo,
+  getTaskActions,
+  UserTaskFilter,
 } from "@/utils/taskUtils";
-import { UserTaskFilter } from "@/utils/taskUtils";
+import { MaterialIcons } from "@expo/vector-icons";
+import React, { useRef } from "react";
+import {
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
 
 const { width: screenWidth } = Dimensions.get("window");
 const SWIPE_THRESHOLD = screenWidth * 0.25;
@@ -249,7 +248,7 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
                       : require("../../../assets/images/flora.png")
                   }
                   alt={senderInfo.isFromEmail ? senderInfo.name : "Flora"}
-                  size={60}
+                  size={40}
                 />
               </View>
 
@@ -263,6 +262,7 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
                       styles.taskSender,
                       isRead && styles.taskSenderRead,
                     ]}
+                    numberOfLines={1}
                   >
                     {senderInfo.isFromEmail ? senderInfo.name : "Flora"}
                   </Text>
@@ -270,32 +270,26 @@ export const UserTaskItem: React.FC<UserTaskItemProps> = ({
                     {formatTimestamp(task.createdAt)}
                   </Text>
                 </View>
-
                 {/* Task Title */}
                 <Text style={styles.subject} numberOfLines={2}>
                   {senderInfo.subject}
                 </Text>
-
-                {/* Task Description and Actions Container */}
-                <View style={styles.previewActionsContainer}>
-                  <Text style={styles.preview} numberOfLines={2}>
-                    {senderInfo.previewText.trim()}
-                  </Text>
-
-                  {/* Task Actions - only show for non-completed tasks */}
-                  {!isCompletedTask && (
-                    <View style={styles.taskActions}>
-                      {getTaskActions(task).map((action, index) => (
-                        <View key={index} style={styles.actionChip}>
-                          <Text style={styles.actionText}>{action}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
+                <Text style={styles.subject} numberOfLines={2}>
+                  {senderInfo.previewText}
+                </Text>
               </View>
             </View>
           </TouchableOpacity>
+          {/* Task Actions - only show for non-completed tasks */}
+          {!isCompletedTask && (
+            <View style={styles.taskActions}>
+              {getTaskActions(task).map((action, index) => (
+                <View key={index} style={styles.actionChip}>
+                  <Text style={styles.actionText}>{action}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </Animated.View>
       </PanGestureHandler>
     </View>
@@ -355,7 +349,7 @@ const createStyles = (colors: any) =>
     taskItem: {
       borderLeftWidth: 4,
       borderLeftColor: colors.primary,
-      height: 150,
+      height: 110,
     },
     taskTouchable: {
       flex: 1,
@@ -367,7 +361,7 @@ const createStyles = (colors: any) =>
       paddingVertical: 0,
     },
     avatarColumn: {
-      width: 70,
+      width: 40,
       alignItems: "center",
       paddingTop: 2,
     },
@@ -406,9 +400,7 @@ const createStyles = (colors: any) =>
       color: colors.text,
       marginBottom: 4,
     },
-    previewActionsContainer: {
-      position: "relative",
-    },
+    previewActionsContainer: {},
     preview: {
       fontSize: 14,
       color: colors.textSecondary,
@@ -417,8 +409,8 @@ const createStyles = (colors: any) =>
     },
     taskActions: {
       position: "absolute",
-      bottom: 0,
-      right: 0,
+      bottom: 8,
+      right: 8,
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "flex-end",

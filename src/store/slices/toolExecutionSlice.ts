@@ -1,22 +1,22 @@
+import { toolExecutionService } from "@/services/toolExecutionService";
 import {
-  createSlice,
-  createAsyncThunk,
-  PayloadAction,
-  createSelector,
-} from "@reduxjs/toolkit";
-import {
-  ToolExecution,
   CreateToolExecutionRequest,
-  UpdateToolExecutionRequest,
   ExecuteToolExecutionRequest,
   ScheduleToolExecutionRequest,
   ToolEndpointAction,
+  ToolExecution,
+  UpdateToolExecutionRequest,
 } from "@/types/toolExecution";
-import { toolExecutionService } from "@/services/toolExecutionService";
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
 interface ToolExecutionState {
-  toolExecutions: Array<ToolExecution>;
-  drafts: Array<ToolExecution>; // Unexecuted tool executions
+  toolExecutions: ToolExecution[];
+  drafts: ToolExecution[]; // Unexecuted tool executions
   currentToolExecution: ToolExecution | null;
   isLoading: boolean;
   isCreating: boolean;
@@ -57,7 +57,7 @@ export const createToolExecutionAsync = createAsyncThunk<
 });
 
 export const fetchMyToolExecutionsAsync = createAsyncThunk<
-  Array<ToolExecution>,
+  ToolExecution[],
   void,
   { rejectValue: string }
 >("toolExecutions/fetchMy", async (_, { rejectWithValue }) => {
@@ -225,21 +225,23 @@ export const toolExecutionSlice = createSlice({
         state.toolExecutions.unshift(toolExecution);
       }
 
-      // Update drafts (unexecuted tool executions)
-      const draftIndex = state.drafts.findIndex(
-        (te) => te.id === toolExecution.id
-      );
-      if (toolExecution.executedAt) {
-        // Remove from drafts if executed
-        if (draftIndex !== -1) {
-          state.drafts.splice(draftIndex, 1);
-        }
-      } else {
-        // Update or add to drafts if not executed
-        if (draftIndex !== -1) {
-          state.drafts[draftIndex] = toolExecution;
+      if (toolExecution.internalListeners.length === 0) {
+        // Update drafts (unexecuted tool executions)
+        const draftIndex = state.drafts.findIndex(
+          (te) => te.id === toolExecution.id
+        );
+        if (toolExecution.executedAt) {
+          // Remove from drafts if executed
+          if (draftIndex !== -1) {
+            state.drafts.splice(draftIndex, 1);
+          }
         } else {
-          state.drafts.unshift(toolExecution);
+          // Update or add to drafts if not executed
+          if (draftIndex !== -1) {
+            state.drafts[draftIndex] = toolExecution;
+          } else {
+            state.drafts.unshift(toolExecution);
+          }
         }
       }
 
@@ -257,7 +259,9 @@ export const toolExecutionSlice = createSlice({
       );
 
       // Remove from drafts
-      state.drafts = state.drafts.filter((te) => te.id !== toolExecutionId);
+      state.drafts = state.drafts.filter(
+        (te) => te.id !== toolExecutionId && te.internalListeners.length === 0
+      );
 
       // Clear current tool execution if it's the one being removed
       if (state.currentToolExecution?.id === toolExecutionId) {
@@ -286,17 +290,23 @@ export const toolExecutionSlice = createSlice({
         state.isCreating = false;
         const toolExecution = action.payload;
 
-        state.drafts = state.drafts.filter((te) => te.id !== toolExecution.id);
+        state.drafts = state.drafts.filter(
+          (te) =>
+            te.id !== toolExecution.id && te.internalListeners.length === 0
+        );
 
         state.toolExecutions.unshift(toolExecution);
 
-        if (!toolExecution.executedAt) {
+        if (
+          !toolExecution.executedAt &&
+          toolExecution.internalListeners.length === 0
+        ) {
           // Remove from drafts if it exists
           state.drafts = state.drafts.filter(
             (te) => te.id !== toolExecution.id
           );
 
-          // Add to drafts if not executed
+          // Add to drafts if not executed and has no internal listeners
           state.drafts.unshift(toolExecution);
         }
 
@@ -315,8 +325,10 @@ export const toolExecutionSlice = createSlice({
         state.isLoading = false;
         state.toolExecutions = action.payload;
 
-        // Separate drafts (unexecuted) from executed tool executions
-        state.drafts = action.payload.filter((te) => !te.executedAt);
+        // Separate drafts (unexecuted and no internal listeners) from executed tool executions
+        state.drafts = action.payload.filter(
+          (te) => !te.executedAt && te.internalListeners.length === 0
+        );
 
         state.error = null;
       })
@@ -541,7 +553,9 @@ export const selectDraftsByAction = createSelector(
 export const selectEmailDrafts = createSelector([selectDrafts], (drafts) =>
   drafts.filter(
     (te) =>
-      te.toolEndpointAction === ToolEndpointAction.GMAIL_SEND && !te.executedAt
+      te.toolEndpointAction === ToolEndpointAction.GMAIL_SEND &&
+      !te.executedAt &&
+      te.internalListeners.length === 0
   )
 );
 
