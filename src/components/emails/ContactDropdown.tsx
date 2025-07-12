@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Alert,
-} from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { useContacts } from "@/hooks/useContacts";
 import { useTheme } from "@/hooks/useTheme";
 import { Contact, ContactEmailAddress } from "@/types/contact";
-import { useContacts } from "@/hooks/useContacts";
+import { MaterialIcons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface ContactDropdownProps {
   visible: boolean;
@@ -61,8 +61,8 @@ export const ContactDropdown: React.FC<ContactDropdownProps> = ({
       (contact) =>
         contact.emailAddresses.some(
           (email) =>
-            email.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            email.name.toLowerCase().includes(searchTerm.toLowerCase())
+            email.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            email.name?.toLowerCase().includes(searchTerm.toLowerCase())
         ) ||
         `${contact.firstName} ${contact.lastName}`
           .toLowerCase()
@@ -78,8 +78,8 @@ export const ContactDropdown: React.FC<ContactDropdownProps> = ({
       const firstContact = searchResults[0];
       const firstEmail = firstContact.emailAddresses.find(
         (email) =>
-          email.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          email.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          email.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          email.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           `${firstContact.firstName} ${firstContact.lastName}`
             .toLowerCase()
             .includes(searchTerm.toLowerCase())
@@ -207,7 +207,7 @@ export const ContactDropdown: React.FC<ContactDropdownProps> = ({
                 email.address
                   .toLowerCase()
                   .includes(searchTerm.toLowerCase()) ||
-                email.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                email.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 `${contact.firstName} ${contact.lastName}`
                   .toLowerCase()
                   .includes(searchTerm.toLowerCase())

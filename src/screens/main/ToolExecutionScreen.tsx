@@ -107,7 +107,6 @@ export const ToolExecutionScreen = () => {
   };
 
   const handleDidChange = () => {
-    console.log("did change!");
     setHasChanges(true);
     hasChangesRef.current = true;
     isInitialRender.current = false;
