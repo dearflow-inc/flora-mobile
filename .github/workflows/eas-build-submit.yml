@@ -1,0 +1,63 @@
+name: EAS Build and Submit
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-submit-ios:
+    name: Build and submit iOS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: yarn
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build iOS app
+        run: eas build --platform ios --profile testflight --non-interactive
+
+      - name: Submit iOS app
+        run: eas submit --platform ios --profile testflight --non-interactive
+
+  build-and-submit-android:
+    name: Build and submit Android
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: yarn
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build Android app
+        run: eas build --platform android --profile production --non-interactive
+
+      - name: Submit Android app
+        run: eas submit --platform android --profile production --non-interactive
