@@ -5,6 +5,9 @@ on:
     branches:
       - dev
 
+permissions:
+  contents: write
+
 jobs:
   bump-version:
     name: Bump version
@@ -34,7 +37,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git add app.config.js
           git commit -m "Bump version for dev build"
-          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/dearflow-inc/flora-mobile.git HEAD:${{ github.ref }}
+          git push origin HEAD:${{ github.ref }}
 
   build-and-submit-ios-dev:
     name: Build and submit iOS (Dev)
