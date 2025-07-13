@@ -40,10 +40,10 @@ jobs:
           git push
 
       - name: Build iOS app
-        run: eas build --platform ios --profile testflight --non-interactive
+        run: eas build --platform ios --profile production --non-interactive
 
       - name: Submit iOS app
-        run: eas submit --platform ios --profile testflight --non-interactive
+        run: eas submit --platform ios --profile production --non-interactive
 
   build-and-submit-android:
     name: Build and submit Android
