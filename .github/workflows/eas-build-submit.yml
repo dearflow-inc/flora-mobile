@@ -37,9 +37,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git add app.config.js
           git commit -m "Bump version for production build"
-          git push origin HEAD:${{ github.ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/dearflow-inc/flora-mobile.git HEAD:${{ github.ref }}
 
       - name: Build iOS app
         run: eas build --platform ios --profile production --non-interactive
@@ -78,9 +76,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git add app.config.js
           git commit -m "Bump version for production build"
-          git push origin HEAD:${{ github.ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/dearflow-inc/flora-mobile.git HEAD:${{ github.ref }}
 
       - name: Build Android app
         run: eas build --platform android --profile production --non-interactive
