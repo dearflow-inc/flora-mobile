@@ -6,7 +6,7 @@ export default {
   expo: {
     name: "DearFlow",
     slug: "flora-mobile",
-    version: "1.0.01",
+    version: "1.0.02",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "ai.dearflow.email",
