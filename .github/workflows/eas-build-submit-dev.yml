@@ -63,10 +63,11 @@ jobs:
         run: yarn install
 
       - name: Build iOS app (Dev)
+        id: build
         run: eas build --platform ios --profile testflight --non-interactive
 
       - name: Submit iOS app (Dev)
-        run: eas submit --platform ios --profile testflight --non-interactive
+        run: eas submit --platform ios --profile testflight --non-interactive --id ${{ steps.build.outputs.build_id }}
 
   build-and-submit-android-dev:
     name: Build and submit Android (Dev)
@@ -92,7 +93,8 @@ jobs:
         run: yarn install
 
       - name: Build Android app (Dev)
+        id: build
         run: eas build --platform android --profile testflight --non-interactive
 
       - name: Submit Android app (Dev)
-        run: eas submit --platform android --profile testflight --non-interactive
+        run: eas submit --platform android --profile testflight --non-interactive --id ${{ steps.build.outputs.build_id }}
