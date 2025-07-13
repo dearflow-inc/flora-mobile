@@ -18,14 +18,14 @@
       }
     },
     "testflight": {
-      "autoIncrement": true,
+      "autoIncrement": false,
       "distribution": "store",
       "env": {
         "EAS_BUILD_PROFILE": "preview"
       }
     },
     "production": {
-      "autoIncrement": true,
+      "autoIncrement": false,
       "env": {
         "EAS_BUILD_PROFILE": "production"
       }

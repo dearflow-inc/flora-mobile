@@ -1,0 +1,11 @@
+{
+  "name": "flora-mobile-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Build scripts for Flora Mobile app",
+  "main": "bump-version.js",
+  "scripts": {
+    "bump-dev": "node bump-version.js dev",
+    "bump-production": "node bump-version.js production"
+  }
+}

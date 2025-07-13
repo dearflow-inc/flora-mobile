@@ -1,13 +1,13 @@
-name: EAS Build and Submit - Production
+name: EAS Build and Submit - Testflight
 
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
-  build-and-submit-ios:
-    name: Build and submit iOS
+  build-and-submit-ios-dev:
+    name: Build and submit iOS (Dev)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -28,25 +28,25 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Bump version (Production)
-        run: node scripts/bump-version.js production
+      - name: Bump version (Dev)
+        run: node scripts/bump-version.js dev
 
       - name: Commit and push version bump
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add app.config.js
-          git commit -m "Bump version for production build"
+          git commit -m "Bump version for dev build"
           git push
 
-      - name: Build iOS app
+      - name: Build iOS app (Dev)
         run: eas build --platform ios --profile testflight --non-interactive
 
-      - name: Submit iOS app
+      - name: Submit iOS app (Dev)
         run: eas submit --platform ios --profile testflight --non-interactive
 
-  build-and-submit-android:
-    name: Build and submit Android
+  build-and-submit-android-dev:
+    name: Build and submit Android (Dev)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -67,19 +67,19 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Bump version (Production)
-        run: node scripts/bump-version.js production
+      - name: Bump version (Dev)
+        run: node scripts/bump-version.js dev
 
       - name: Commit and push version bump
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add app.config.js
-          git commit -m "Bump version for production build"
+          git commit -m "Bump version for dev build"
           git push
 
-      - name: Build Android app
-        run: eas build --platform android --profile production --non-interactive
+      - name: Build Android app (Dev)
+        run: eas build --platform android --profile testflight --non-interactive
 
-      - name: Submit Android app
-        run: eas submit --platform android --profile production --non-interactive
+      - name: Submit Android app (Dev)
+        run: eas submit --platform android --profile testflight --non-interactive
