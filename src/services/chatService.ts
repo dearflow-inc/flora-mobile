@@ -136,6 +136,7 @@ class ChatService {
           attachmentIds,
           refers,
           metadata: {},
+          isMobile: true,
         }),
       }
     );

@@ -1,4 +1,5 @@
 import { ChatView } from "@/components/ChatView";
+import { WebSocketStatusIndicator } from "@/components/WebSocketStatusIndicator";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useTheme } from "@/hooks/useTheme";
@@ -9,14 +10,8 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useState } from "react";
-import {
-  Modal,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export const ChatScreen = () => {
   const dispatch = useAppDispatch();
@@ -25,6 +20,7 @@ export const ChatScreen = () => {
   const { currentProfile } = useAppSelector((state) => state.profile);
 
   const [isMenuModalVisible, setIsMenuModalVisible] = useState(false);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
 
   const styles = createStyles(colors);
 
@@ -58,33 +54,63 @@ export const ChatScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Image
-            source={require("../../../assets/images/icon.png")}
-            style={styles.logo}
+            source={require("../../../assets/images/flora.png")}
+            style={styles.avatar}
           />
-          <Text style={styles.title}>Flora</Text>
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerTitle}>Flora</Text>
+            <Text style={styles.headerSubtitle}>
+              {wsConnected ? "Connected" : "Connecting..."}
+            </Text>
+          </View>
         </View>
+
         <View style={styles.headerRight}>
-          {wsConnected && <View style={styles.connectionDot} />}
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => setShowDebugInfo(!showDebugInfo)}
+          >
+            <MaterialIcons
+              name="info-outline"
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => setIsMenuModalVisible(true)}
           >
-            <MaterialIcons name="more-vert" size={24} color={colors.text} />
+            <MaterialIcons
+              name="more-vert"
+              size={24}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ChatView aiInitConversation={true} />
+      {/* Debug info panel */}
+      {showDebugInfo && (
+        <View style={styles.debugPanel}>
+          <WebSocketStatusIndicator showDetails={true} />
+        </View>
+      )}
+
+      <ChatView
+        offsetChat={60}
+        autoCreateChat={true}
+        aiInitConversation={true}
+      />
 
       {/* Menu Modal */}
       <Modal
-        animationType="fade"
-        transparent={true}
         visible={isMenuModalVisible}
+        transparent={true}
+        animationType="fade"
         onRequestClose={() => setIsMenuModalVisible(false)}
       >
         <TouchableOpacity
@@ -93,15 +119,13 @@ export const ChatScreen = () => {
           onPress={() => setIsMenuModalVisible(false)}
         >
           <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.menuOption}
-              onPress={() => {
-                setIsMenuModalVisible(false);
-                handleClearChat();
-              }}
-            >
-              <MaterialIcons name="cleaning-services" size={24} color="#333" />
-              <Text style={styles.menuOptionText}>Clear Chat</Text>
+            <TouchableOpacity style={styles.menuItem} onPress={handleClearChat}>
+              <MaterialIcons
+                name="clear"
+                size={20}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.menuItemText}>Clear Chat</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -133,6 +157,30 @@ const createStyles = (colors: any) =>
     headerRight: {
       flexDirection: "row",
       alignItems: "center",
+    },
+    avatar: {
+      width: 32,
+      height: 32,
+      marginRight: 12,
+      borderRadius: 16,
+    },
+    headerInfo: {
+      flexDirection: "column",
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    headerSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    debugPanel: {
+      padding: 12,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
     },
     logo: {
       width: 32,
@@ -183,6 +231,17 @@ const createStyles = (colors: any) =>
       paddingVertical: 12,
     },
     menuOptionText: {
+      marginLeft: 12,
+      fontSize: 16,
+      color: colors.text,
+    },
+    menuItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    menuItemText: {
       marginLeft: 12,
       fontSize: 16,
       color: colors.text,

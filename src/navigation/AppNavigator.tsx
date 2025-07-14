@@ -1,24 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Alert, Linking, Platform } from "react-native";
+import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { checkAuthAsync } from "@/store/slices/authSlice";
-import {
-  setInitialized,
-  loadThemeAsync,
-  setInitializedIfProfileFetched,
-  forceInitialized,
-} from "@/store/slices/appSlice";
-import { fetchMyProfileAsync } from "@/store/slices/profileSlice";
+import { LoadingScreen } from "@/screens/LoadingScreen";
 import { notificationService } from "@/services/notificationService";
 import { secureStorage } from "@/services/secureStorage";
+import {
+  forceInitialized,
+  loadThemeAsync,
+  setInitializedIfProfileFetched,
+} from "@/store/slices/appSlice";
+import { checkAuthAsync } from "@/store/slices/authSlice";
+import { fetchMyProfileAsync } from "@/store/slices/profileSlice";
 import { RootStackParamList } from "@/types/navigation";
-import { LoadingScreen } from "@/screens/LoadingScreen";
+import { useNavigation } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React, { useEffect, useState } from "react";
+import { Alert, Linking, Platform } from "react-native";
+import { AppStackNavigator } from "./AppStackNavigator";
 import { AuthNavigator } from "./AuthNavigator";
 import { OnboardingNavigator } from "./OnboardingNavigator";
-import { AppStackNavigator } from "./AppStackNavigator";
-import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
-import { useNavigation } from "@react-navigation/native";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

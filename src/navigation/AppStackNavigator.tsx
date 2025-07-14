@@ -15,7 +15,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View } from "react-native";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -24,10 +24,7 @@ const MainTabNavigator = () => {
   const { colors } = useTheme();
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      edges={["top"]}
-    >
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <NavigationListener />
       <Tab.Navigator
         initialRouteName="Emails"
@@ -69,7 +66,7 @@ const MainTabNavigator = () => {
         <Tab.Screen name="Todos" component={TodosScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
-    </SafeAreaView>
+    </View>
   );
 };
 

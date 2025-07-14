@@ -1,28 +1,25 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  ActivityIndicator,
-  RefreshControl,
-  useWindowDimensions,
-} from "react-native";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "@/store";
+import { EmailContextView } from "@/components/context/EmailContextView";
 import { useTheme } from "@/hooks/useTheme";
-import {
-  fetchEmailsByThreadIdAsync,
-  fetchEmailByIdAsync,
-} from "@/store/slices/emailSlice";
+import { AppDispatch, RootState } from "@/store";
+import { fetchEmailsByThreadIdAsync } from "@/store/slices/emailSlice";
 import { Email } from "@/types/email";
 import { AppStackParamList } from "@/types/navigation";
-import { EmailContextView } from "@/components/context/EmailContextView";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
 
 type EmailThreadScreenProps = NativeStackNavigationProp<
   AppStackParamList,

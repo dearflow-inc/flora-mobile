@@ -32,7 +32,6 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -43,6 +42,7 @@ import {
   PanGestureHandler,
   State,
 } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 
 // Components
@@ -304,7 +304,7 @@ export const EmailsScreen = () => {
   const filteredUserTasks = getFilteredUserTasks(
     userTasks,
     activeFilter,
-    selectedContextViewId,
+    selectedContextViewId || "important",
     searchQuery
   );
 
@@ -432,7 +432,7 @@ export const EmailsScreen = () => {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <Header
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -445,7 +445,7 @@ export const EmailsScreen = () => {
           activeFilter !== "trash" && (
             <ContextFilter
               contextViews={getContextViewList()}
-              selectedContextViewId={selectedContextViewId}
+              selectedContextViewId={selectedContextViewId || "important"}
               contextViewSwitchAnimation={contextViewSwitchAnimation}
               onContextViewSelect={setSelectedContextViewId}
               onSwitchToNext={switchToNextContextView}

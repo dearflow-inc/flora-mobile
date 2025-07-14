@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
-import { Animated } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { useState } from "react";
+import { Animated } from "react-native";
 
 interface ContextView {
   id: string;
@@ -19,7 +19,7 @@ export const useContextViews = (contextViews: ContextView[]) => {
   const getContextViewList = () => {
     return [
       { id: "all", name: "All", color: colors.primary },
-      { id: null, name: "Important", color: colors.primary },
+      { id: "important", name: "Important", color: colors.primary },
       ...(contextViews || [])
         .sort((a, b) => b.importance - a.importance)
         .map((cv) => ({

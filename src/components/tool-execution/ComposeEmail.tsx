@@ -203,7 +203,9 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
       const response = await regenerateTextService.regenerateText({
         originalText: emailData.body,
         sectionToReplace: emailData.body, // Replace entire body for ask AI
-        modificationInstructions: aiQuestion,
+        modificationInstructions:
+          "Imrpove or write the email that the user has described, if there is no email yet then make sure to include beginning middle part and signature: " +
+          aiQuestion,
         formerVersions: [],
       });
 
@@ -358,7 +360,7 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
           />
         </SafeAreaView>
       ) : (
-        <View style={{ backgroundColor: colors.background }}>
+        <View style={{ backgroundColor: colors.background, paddingBottom: 20 }}>
           <AutoSaveIndicator lastSaved={lastSaved} />
           <EmailActionBar
             onAskAI={() => setShowAiModal(true)}

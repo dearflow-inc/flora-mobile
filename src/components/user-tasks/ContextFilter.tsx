@@ -10,16 +10,16 @@ import {
 } from "react-native";
 
 interface ContextView {
-  id: string | null;
+  id: string;
   name: string;
   color: string;
 }
 
 interface ContextFilterProps {
   contextViews: ContextView[];
-  selectedContextViewId: string | null;
+  selectedContextViewId: string;
   contextViewSwitchAnimation: Animated.Value;
-  onContextViewSelect: (contextViewId: string | null) => void;
+  onContextViewSelect: (contextViewId: string) => void;
   onSwitchToNext: () => void;
   onSwitchToPrevious: () => void;
 }
@@ -37,14 +37,14 @@ export const ContextFilter: React.FC<ContextFilterProps> = ({
 
   const styles = createStyles(colors);
 
-  const scrollActiveContextViewIntoView = (contextViewId: string | null) => {
+  const scrollActiveContextViewIntoView = (contextViewId: string) => {
     const targetIndex = contextViews.findIndex((cv) => cv.id === contextViewId);
 
     if (targetIndex !== -1 && contextViewScrollRef.current) {
       let scrollPosition = 0;
 
       // Calculate approximate position based on chip width and spacing
-      if (contextViewId === null) {
+      if (contextViewId === "important") {
         scrollPosition = 0;
       } else {
         const contextViewIndex = contextViews.findIndex(

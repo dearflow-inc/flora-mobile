@@ -1,33 +1,34 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Image,
-  Platform,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  Linking,
-  RefreshControl,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import * as ImagePicker from "expo-image-picker";
+import { ConnectInboxModal } from "@/components/ConnectInboxModal";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useTheme } from "@/hooks/useTheme";
-import { signOutAsync, fetchUsageAsync } from "@/store/slices/authSlice";
+import { fetchUsageAsync, signOutAsync } from "@/store/slices/authSlice";
 import {
   fetchMyProfileAsync,
-  uploadMyProfileAvatarAsync,
   updateMyProfileAsync,
+  uploadMyProfileAvatarAsync,
 } from "@/store/slices/profileSlice";
-import { DearflowPaymentPlan, UpdateMyProfileRequest } from "@/types/profile";
 import { DearflowPaymentPlan as AuthDearflowPaymentPlan } from "@/types/auth";
-import { ConnectInboxModal } from "@/components/ConnectInboxModal";
+import { DearflowPaymentPlan, UpdateMyProfileRequest } from "@/types/profile";
+import { useNavigation } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Linking,
+  Modal,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const timezones = [
   { name: "UTC", value: "UTC" },
@@ -348,351 +349,363 @@ export const ProfileScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading profile...</Text>
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Error loading profile: {error}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => dispatch(fetchMyProfileAsync())}
-        >
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Error loading profile: {error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => dispatch(fetchMyProfileAsync())}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-        />
-      }
-    >
-      <View style={styles.content}>
-        <View style={styles.profileHeader}>
-          <TouchableOpacity
-            style={styles.avatarContainer}
-            onPress={handleAvatarPress}
-          >
-            <View style={styles.avatar}>
-              {currentProfile?.avatar ? (
-                <Image
-                  source={{ uri: currentProfile.avatar }}
-                  style={styles.avatarImage}
-                />
-              ) : (
-                <Text style={styles.avatarText}>
-                  {currentProfile?.name?.charAt(0).toUpperCase() ||
-                    currentProfile?.email?.charAt(0).toUpperCase() ||
-                    "U"}
-                </Text>
-              )}
-              {isUploadingAvatar && (
-                <View style={styles.avatarLoadingOverlay}>
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+    <SafeAreaView edges={["top"]}>
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        <View style={styles.content}>
+          <View style={styles.profileHeader}>
+            <TouchableOpacity
+              style={styles.avatarContainer}
+              onPress={handleAvatarPress}
+            >
+              <View style={styles.avatar}>
+                {currentProfile?.avatar ? (
+                  <Image
+                    source={{ uri: currentProfile.avatar }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <Text style={styles.avatarText}>
+                    {currentProfile?.name?.charAt(0).toUpperCase() ||
+                      currentProfile?.email?.charAt(0).toUpperCase() ||
+                      "U"}
+                  </Text>
+                )}
+                {isUploadingAvatar && (
+                  <View style={styles.avatarLoadingOverlay}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  </View>
+                )}
+              </View>
+              {!isUploadingAvatar && (
+                <View style={styles.avatarEditOverlay}>
+                  <Text style={styles.avatarEditText}>Edit</Text>
                 </View>
               )}
+            </TouchableOpacity>
+            <Text style={styles.name}>{currentProfile?.name || "User"}</Text>
+            <Text style={styles.email}>
+              {currentProfile?.email || "user@example.com"}
+            </Text>
+          </View>
+
+          {/* Subscription Section */}
+          <View style={styles.subscriptionSection}>
+            <Text style={styles.sectionTitle}>Subscription</Text>
+            <View style={styles.subscriptionCard}>
+              <View style={styles.subscriptionHeader}>
+                <Text style={styles.subscriptionTitle}>
+                  {user?.paymentPlans?.length
+                    ? formatAuthPlan(user.paymentPlans[0].plan)
+                    : "Free"}
+                </Text>
+                <Text style={styles.subscriptionStatus}>
+                  {user?.paymentPlans?.length ? "Active" : "Free Plan"}
+                </Text>
+              </View>
+              <View style={styles.usageContainer}>
+                <Text style={styles.usageLabel}>Emails Scanned</Text>
+                {isFetchingUsage ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Text style={styles.usageValue}>
+                    {emailUsage
+                      ? !user?.paymentPlans.some(
+                          (plan) => plan.plan === AuthDearflowPaymentPlan.FREE
+                        )
+                        ? emailUsage.totalPassedThisMonth.toLocaleString()
+                        : `${emailUsage.totalPassedThisMonth}/300`
+                      : "0"}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={() =>
+                  Linking.openURL("https://app.dearflow.ai/profile/plan")
+                }
+              >
+                <Text style={styles.subscriptionLink}>
+                  Change your subscription on our{" "}
+                  <Text style={styles.subscriptionLinkHighlight}>webapp</Text>
+                </Text>
+              </TouchableOpacity>
             </View>
-            {!isUploadingAvatar && (
-              <View style={styles.avatarEditOverlay}>
-                <Text style={styles.avatarEditText}>Edit</Text>
+          </View>
+
+          <View style={styles.profileInfo}>
+            <Text style={styles.sectionTitle}>Profile Information</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Name:</Text>
+              <Text style={styles.infoValue}>
+                {currentProfile?.name || "Not set"}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Email:</Text>
+              <Text style={styles.infoValue}>
+                {currentProfile?.email || "Not set"}
+              </Text>
+            </View>
+            {currentProfile?.phone && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Phone:</Text>
+                <Text style={styles.infoValue}>{currentProfile.phone}</Text>
               </View>
             )}
-          </TouchableOpacity>
-          <Text style={styles.name}>{currentProfile?.name || "User"}</Text>
-          <Text style={styles.email}>
-            {currentProfile?.email || "user@example.com"}
-          </Text>
-        </View>
+            {currentProfile?.whatsApp && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>WhatsApp:</Text>
+                <Text style={styles.infoValue}>{currentProfile.whatsApp}</Text>
+              </View>
+            )}
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Time Zone:</Text>
+              <Text style={styles.infoValue}>
+                {currentProfile?.mainTimeZone
+                  ? getTimezoneLabel(currentProfile.mainTimeZone)
+                  : "UTC"}
+              </Text>
+            </View>
+            <View style={styles.infoColumn}>
+              <Text style={styles.infoLabel}>Description:</Text>
+              <Text style={styles.infoValueLeft}>
+                {currentProfile?.description || "Not set"}
+              </Text>
+            </View>
+          </View>
 
-        {/* Subscription Section */}
-        <View style={styles.subscriptionSection}>
-          <Text style={styles.sectionTitle}>Subscription</Text>
-          <View style={styles.subscriptionCard}>
-            <View style={styles.subscriptionHeader}>
-              <Text style={styles.subscriptionTitle}>
-                {user?.paymentPlans?.length
-                  ? formatAuthPlan(user.paymentPlans[0].plan)
-                  : "Free"}
-              </Text>
-              <Text style={styles.subscriptionStatus}>
-                {user?.paymentPlans?.length ? "Active" : "Free Plan"}
-              </Text>
-            </View>
-            <View style={styles.usageContainer}>
-              <Text style={styles.usageLabel}>Emails Scanned</Text>
-              {isFetchingUsage ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Text style={styles.usageValue}>
-                  {emailUsage
-                    ? !user?.paymentPlans.some(
-                        (plan) => plan.plan === AuthDearflowPaymentPlan.FREE
-                      )
-                      ? emailUsage.totalPassedThisMonth.toLocaleString()
-                      : `${emailUsage.totalPassedThisMonth}/300`
-                    : "0"}
-                </Text>
-              )}
-            </View>
+          {currentProfile?.currentMainTargets &&
+            currentProfile.currentMainTargets.length > 0 && (
+              <View style={styles.profileInfo}>
+                <Text style={styles.sectionTitle}>Main Targets</Text>
+                {currentProfile.currentMainTargets.map((target, index) => (
+                  <View key={target.id} style={styles.targetItem}>
+                    <Text style={styles.targetText}>{target.text}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+          <View style={styles.actions}>
             <TouchableOpacity
-              onPress={() =>
-                Linking.openURL("https://app.dearflow.ai/profile/plan")
-              }
+              style={styles.actionButton}
+              onPress={handleEditProfile}
             >
-              <Text style={styles.subscriptionLink}>
-                Change your subscription on our{" "}
-                <Text style={styles.subscriptionLinkHighlight}>webapp</Text>
-              </Text>
+              <Text style={styles.actionButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleSettings}
+            >
+              <Text style={styles.actionButtonText}>Settings</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleConnectInbox}
+            >
+              <Text style={styles.actionButtonText}>Connect Inbox</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.profileInfo}>
-          <Text style={styles.sectionTitle}>Profile Information</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Name:</Text>
-            <Text style={styles.infoValue}>
-              {currentProfile?.name || "Not set"}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email:</Text>
-            <Text style={styles.infoValue}>
-              {currentProfile?.email || "Not set"}
-            </Text>
-          </View>
-          {currentProfile?.phone && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Phone:</Text>
-              <Text style={styles.infoValue}>{currentProfile.phone}</Text>
-            </View>
-          )}
-          {currentProfile?.whatsApp && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>WhatsApp:</Text>
-              <Text style={styles.infoValue}>{currentProfile.whatsApp}</Text>
-            </View>
-          )}
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Time Zone:</Text>
-            <Text style={styles.infoValue}>
-              {currentProfile?.mainTimeZone
-                ? getTimezoneLabel(currentProfile.mainTimeZone)
-                : "UTC"}
-            </Text>
-          </View>
-          <View style={styles.infoColumn}>
-            <Text style={styles.infoLabel}>Description:</Text>
-            <Text style={styles.infoValueLeft}>
-              {currentProfile?.description || "Not set"}
-            </Text>
-          </View>
-        </View>
-
-        {currentProfile?.currentMainTargets &&
-          currentProfile.currentMainTargets.length > 0 && (
-            <View style={styles.profileInfo}>
-              <Text style={styles.sectionTitle}>Main Targets</Text>
-              {currentProfile.currentMainTargets.map((target, index) => (
-                <View key={target.id} style={styles.targetItem}>
-                  <Text style={styles.targetText}>{target.text}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleEditProfile}
-          >
-            <Text style={styles.actionButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleSettings}
-          >
-            <Text style={styles.actionButtonText}>Settings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleConnectInbox}
-          >
-            <Text style={styles.actionButtonText}>Connect Inbox</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>Logout</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Edit Profile Modal */}
-      <Modal
-        visible={isEditModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setIsEditModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.keyboardAvoidingView}
-            keyboardVerticalOffset={Platform.OS === "ios" ? -20 : 0}
-          >
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Edit Profile</Text>
-                <TouchableOpacity
-                  onPress={() => setIsEditModalVisible(false)}
-                  style={styles.modalCloseButton}
-                >
-                  <Text style={styles.modalCloseText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView
-                style={styles.modalForm}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-              >
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Name</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={editForm.name}
-                    onChangeText={(text) =>
-                      setEditForm({ ...editForm, name: text })
-                    }
-                    placeholder="Enter your name"
-                    placeholderTextColor={colors.textSecondary}
-                  />
-                </View>
-
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Description</Text>
-                  <TextInput
-                    style={[styles.textInput, styles.descriptionInput]}
-                    value={editForm.description}
-                    onChangeText={(text) =>
-                      setEditForm({ ...editForm, description: text })
-                    }
-                    placeholder="Tell us about yourself"
-                    placeholderTextColor={colors.textSecondary}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                  />
-                </View>
-
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Time Zone</Text>
+        {/* Edit Profile Modal */}
+        <Modal
+          visible={isEditModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setIsEditModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={styles.keyboardAvoidingView}
+              keyboardVerticalOffset={Platform.OS === "ios" ? -20 : 0}
+            >
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Edit Profile</Text>
                   <TouchableOpacity
-                    style={styles.dropdownButton}
-                    onPress={() => setIsTimezoneDropdownVisible(true)}
+                    onPress={() => setIsEditModalVisible(false)}
+                    style={styles.modalCloseButton}
                   >
-                    <Text style={styles.dropdownButtonText}>
-                      {getTimezoneLabel(editForm.timeZone)}
-                    </Text>
-                    <Text style={styles.dropdownArrow}>▼</Text>
+                    <Text style={styles.modalCloseText}>✕</Text>
                   </TouchableOpacity>
                 </View>
-              </ScrollView>
 
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={styles.modalCancelButton}
-                  onPress={() => setIsEditModalVisible(false)}
+                <ScrollView
+                  style={styles.modalForm}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
                 >
-                  <Text style={styles.modalCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.modalSaveButton,
-                    isUpdating && styles.modalSaveButtonDisabled,
-                  ]}
-                  onPress={handleSaveProfile}
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.modalSaveText}>Save</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Name</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={editForm.name}
+                      onChangeText={(text) =>
+                        setEditForm({ ...editForm, name: text })
+                      }
+                      placeholder="Enter your name"
+                      placeholderTextColor={colors.textSecondary}
+                    />
+                  </View>
 
-      {/* Timezone Dropdown Modal */}
-      <Modal
-        visible={isTimezoneDropdownVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsTimezoneDropdownVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsTimezoneDropdownVisible(false)}
-        >
-          <View style={styles.timezoneModalContent}>
-            <Text style={styles.modalTitle}>Select Time Zone</Text>
-            <ScrollView style={styles.timezoneScrollView}>
-              {timezones.map((timezone) => (
-                <TouchableOpacity
-                  key={timezone.value}
-                  style={[
-                    styles.timezoneOption,
-                    editForm.timeZone === timezone.value &&
-                      styles.timezoneOptionSelected,
-                  ]}
-                  onPress={() => handleTimezoneSelect(timezone.value)}
-                >
-                  <Text
-                    style={[
-                      styles.timezoneOptionText,
-                      editForm.timeZone === timezone.value &&
-                        styles.timezoneOptionTextSelected,
-                    ]}
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Description</Text>
+                    <TextInput
+                      style={[styles.textInput, styles.descriptionInput]}
+                      value={editForm.description}
+                      onChangeText={(text) =>
+                        setEditForm({ ...editForm, description: text })
+                      }
+                      placeholder="Tell us about yourself"
+                      placeholderTextColor={colors.textSecondary}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Time Zone</Text>
+                    <TouchableOpacity
+                      style={styles.dropdownButton}
+                      onPress={() => setIsTimezoneDropdownVisible(true)}
+                    >
+                      <Text style={styles.dropdownButtonText}>
+                        {getTimezoneLabel(editForm.timeZone)}
+                      </Text>
+                      <Text style={styles.dropdownArrow}>▼</Text>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
+
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={styles.modalCancelButton}
+                    onPress={() => setIsEditModalVisible(false)}
                   >
-                    {timezone.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                    <Text style={styles.modalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.modalSaveButton,
+                      isUpdating && styles.modalSaveButtonDisabled,
+                    ]}
+                    onPress={handleSaveProfile}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.modalSaveText}>Save</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </KeyboardAvoidingView>
           </View>
-        </TouchableOpacity>
-      </Modal>
+        </Modal>
 
-      {/* Connect Inbox Modal */}
-      <ConnectInboxModal
-        visible={showConnectInboxModal}
-        onClose={() => setShowConnectInboxModal(false)}
-        onSuccess={handleConnectInboxSuccess}
-        updateOnboarding={false}
-      />
-    </ScrollView>
+        {/* Timezone Dropdown Modal */}
+        <Modal
+          visible={isTimezoneDropdownVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsTimezoneDropdownVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setIsTimezoneDropdownVisible(false)}
+          >
+            <View style={styles.timezoneModalContent}>
+              <Text style={styles.modalTitle}>Select Time Zone</Text>
+              <ScrollView style={styles.timezoneScrollView}>
+                {timezones.map((timezone) => (
+                  <TouchableOpacity
+                    key={timezone.value}
+                    style={[
+                      styles.timezoneOption,
+                      editForm.timeZone === timezone.value &&
+                        styles.timezoneOptionSelected,
+                    ]}
+                    onPress={() => handleTimezoneSelect(timezone.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.timezoneOptionText,
+                        editForm.timeZone === timezone.value &&
+                          styles.timezoneOptionTextSelected,
+                      ]}
+                    >
+                      {timezone.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Connect Inbox Modal */}
+        <ConnectInboxModal
+          visible={showConnectInboxModal}
+          onClose={() => setShowConnectInboxModal(false)}
+          onSuccess={handleConnectInboxSuccess}
+          updateOnboarding={false}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const createStyles = (colors: any) =>
   StyleSheet.create({
+    safeArea: {
+      flex: 1,
+    },
     container: {
       flex: 1,
       backgroundColor: colors.background,

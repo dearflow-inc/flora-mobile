@@ -1,3 +1,5 @@
+import { store } from "@/store";
+import { selectContextViews } from "@/store/slices/scenariosSlice";
 import { EmailWithoutContent } from "@/types/email";
 import { UserTask, UserTaskStatus, UserTaskType } from "@/types/userTask";
 
@@ -61,12 +63,24 @@ export const getFilteredUserTasks = (
     filteredTasks = filteredTasks.filter(
       (task) =>
         selectedContextViewId === "all" ||
+        selectedContextViewId === "important" ||
         task.contextViewId === selectedContextViewId
     );
   } else {
     // When showing "All" tasks, filter out EMAIL_CLEAN_UP tasks
     filteredTasks = filteredTasks.filter(
       (task) => task.type !== UserTaskType.EMAIL_CLEAN_UP
+    );
+  }
+
+  if (selectedContextViewId === "important") {
+    const contextViews = selectContextViews(store.getState());
+    filteredTasks = filteredTasks.filter(
+      (task) =>
+        task.importance > 60 &&
+        contextViews
+          .filter((ctx) => ctx.importance > 50)
+          .some((item) => item.id === task.contextViewId)
     );
   }
 
