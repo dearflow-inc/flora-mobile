@@ -22,6 +22,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 
 // Import our new components
@@ -202,7 +203,9 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
       const response = await regenerateTextService.regenerateText({
         originalText: emailData.body,
         sectionToReplace: emailData.body, // Replace entire body for ask AI
-        modificationInstructions: aiQuestion,
+        modificationInstructions:
+          "Imrpove or write the email that the user has described, if there is no email yet then make sure to include beginning middle part and signature: " +
+          aiQuestion,
         formerVersions: [],
       });
 
@@ -279,10 +282,8 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        style={[
-          styles.content,
-          { minHeight: height - 260, maxHeight: height - 260 },
-        ]}
+        style={styles.content}
+        contentContainerStyle={{ flexGrow: 1 }}
         scrollEnabled={true}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={true}
@@ -339,22 +340,42 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
         <View style={{ height: 150, backgroundColor: colors.background }} />
       </ScrollView>
 
-      {/* Auto-save indicator - positioned at bottom */}
-      <AutoSaveIndicator lastSaved={lastSaved} />
-
-      {/* Action Bar */}
-      <EmailActionBar
-        onAskAI={() => setShowAiModal(true)}
-        onRefresh={handleRefreshContent}
-        onFollowUp={() => setShowFollowUpModal(true)}
-        onAttach={handleAttach}
-        onSend={handleSendClick}
-        isAskingAI={isAskingAI}
-        isSending={isSending}
-        isExecuting={isExecuting}
-        hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
-        disabled={isSendDisabled}
-      />
+      {Platform.OS === "ios" ? (
+        <SafeAreaView
+          edges={["bottom"]}
+          style={{ backgroundColor: colors.background }}
+        >
+          <AutoSaveIndicator lastSaved={lastSaved} />
+          <EmailActionBar
+            onAskAI={() => setShowAiModal(true)}
+            onRefresh={handleRefreshContent}
+            onFollowUp={() => setShowFollowUpModal(true)}
+            onAttach={handleAttach}
+            onSend={handleSendClick}
+            isAskingAI={isAskingAI}
+            isSending={isSending}
+            isExecuting={isExecuting}
+            hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
+            disabled={isSendDisabled}
+          />
+        </SafeAreaView>
+      ) : (
+        <View style={{ backgroundColor: colors.background, paddingBottom: 20 }}>
+          <AutoSaveIndicator lastSaved={lastSaved} />
+          <EmailActionBar
+            onAskAI={() => setShowAiModal(true)}
+            onRefresh={handleRefreshContent}
+            onFollowUp={() => setShowFollowUpModal(true)}
+            onAttach={handleAttach}
+            onSend={handleSendClick}
+            isAskingAI={isAskingAI}
+            isSending={isSending}
+            isExecuting={isExecuting}
+            hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
+            disabled={isSendDisabled}
+          />
+        </View>
+      )}
 
       {/* Modals */}
       <AIModal

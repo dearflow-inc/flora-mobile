@@ -1,24 +1,22 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  SafeAreaView,
-  Linking,
-  Switch,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { MaterialIcons } from "@expo/vector-icons";
+import { ConnectInboxModal } from "@/components/ConnectInboxModal";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { updateMyProfileAsync } from "@/store/slices/profileSlice";
+import { useTheme } from "@/hooks/useTheme";
 import { setTheme } from "@/store/slices/appSlice";
 import { OnboardingStackParamList } from "@/types/navigation";
-import { useTheme } from "@/hooks/useTheme";
-import { ConnectInboxModal } from "@/components/ConnectInboxModal";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React, { useState } from "react";
+import {
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type ConnectInboxScreenNavigationProp = NativeStackNavigationProp<
   OnboardingStackParamList,

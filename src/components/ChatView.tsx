@@ -7,7 +7,6 @@ import { useTheme } from "@/hooks/useTheme";
 import {
   AuthorType,
   ChatMessage,
-  clearCurrentChat,
   clearError,
   createChatAsync,
   fetchLatestChatAsync,
@@ -24,7 +23,6 @@ import {
   Clipboard,
   FlatList,
   Keyboard,
-  KeyboardAvoidingView,
   Linking,
   Platform,
   StyleSheet,
@@ -192,24 +190,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
     } catch (error) {
       console.error("Failed to create chat:", error);
     }
-  };
-
-  const handleClearChat = () => {
-    Alert.alert(
-      "New Chat",
-      "Start a new conversation? This will create a fresh chat session.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "New Chat",
-          style: "default",
-          onPress: async () => {
-            dispatch(clearCurrentChat());
-            await handleCreateNewChat();
-          },
-        },
-      ]
-    );
   };
 
   const sendMessage = async () => {
@@ -592,11 +572,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.chatContainer}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? offsetChat : 0}
-    >
+    <View style={styles.chatContainer}>
       {isLoadingMessages ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
@@ -612,7 +588,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
           )}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
-          style={styles.messagesList}
+          // Remove flex: 1 from here
           contentContainerStyle={styles.messagesContainer}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={() =>
@@ -741,7 +717,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
           </TouchableOpacity>
         </View>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -749,7 +725,8 @@ const createStyles = (colors: any, isChatClosed: boolean) =>
   StyleSheet.create({
     chatContainer: {
       flex: 1,
-      justifyContent: "flex-end",
+      justifyContent: "flex-start",
+      backgroundColor: colors.background,
     },
     loadingContainer: {
       flex: 1,
@@ -863,7 +840,7 @@ const createStyles = (colors: any, isChatClosed: boolean) =>
     },
     pullIndicator: {
       position: "absolute",
-      bottom: isChatClosed ? 80 : 60, // Position above input container
+      bottom: isChatClosed ? 80 : 20, // Position above input container
       left: 0,
       right: 0,
       alignItems: "center",
@@ -900,6 +877,7 @@ const createStyles = (colors: any, isChatClosed: boolean) =>
       borderTopWidth: 1,
       borderTopColor: colors.border,
       minHeight: 44,
+      marginBottom: Platform.OS === "ios" ? -35 : -25,
     },
     textInput: {
       flex: 1,

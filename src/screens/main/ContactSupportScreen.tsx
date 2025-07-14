@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  Linking,
-  Modal,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useTheme } from "@/hooks/useTheme";
 import { createFeedbackAsync } from "@/store/slices/profileSlice";
 import { FeedbackPurpose } from "@/types/profile";
+import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const feedbackOptions = [
   {
@@ -143,139 +144,144 @@ export const ContactSupportScreen = () => {
   const styles = createStyles(colors);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Contact Support</Text>
-        </View>
-
-        {/* Social Media Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Social Media</Text>
-          <View style={styles.socialGrid}>
-            {socials.map((social, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.socialItem}
-                onPress={() => handleSocialPress(social.href)}
-              >
-                <Text style={styles.socialName}>{social.name}</Text>
-                <Text style={styles.socialUrl}>{social.url}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Feedback Form Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Send a Message to Us</Text>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Name</Text>
-            <TextInput
-              style={styles.textInput}
-              value={formData.name}
-              onChangeText={(value) => handleInputChange("name", value)}
-              placeholder="Enter your name"
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Reason</Text>
+    <SafeAreaView edges={["top"]} style={styles.safeContainer}>
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
             <TouchableOpacity
-              style={styles.dropdownButton}
-              onPress={() => setIsDropdownVisible(true)}
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
             >
-              <Text style={styles.dropdownButtonText}>
-                {getFeedbackPurposeLabel(formData.feedbackPurpose)}
-              </Text>
-              <Text style={styles.dropdownArrow}>▼</Text>
+              <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
+            <Text style={styles.title}>Contact Support</Text>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Feedback</Text>
-            <TextInput
-              style={[styles.textInput, styles.textArea]}
-              value={formData.feedback}
-              onChangeText={(value) => handleInputChange("feedback", value)}
-              placeholder="Please describe your issue or feedback..."
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              numberOfLines={5}
-              textAlignVertical="top"
-            />
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              isCreatingFeedback && styles.submitButtonDisabled,
-            ]}
-            onPress={handleSubmitFeedback}
-            disabled={isCreatingFeedback}
-          >
-            {isCreatingFeedback ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.submitButtonText}>Send</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Dropdown Modal */}
-        <Modal
-          visible={isDropdownVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setIsDropdownVisible(false)}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setIsDropdownVisible(false)}
-          >
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Reason</Text>
-              {feedbackOptions.map((option) => (
+          {/* Social Media Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Social Media</Text>
+            <View style={styles.socialGrid}>
+              {socials.map((social, index) => (
                 <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.modalOption,
-                    formData.feedbackPurpose === option.value &&
-                      styles.modalOptionSelected,
-                  ]}
-                  onPress={() => handleDropdownSelect(option.value)}
+                  key={index}
+                  style={styles.socialItem}
+                  onPress={() => handleSocialPress(social.href)}
                 >
-                  <Text
-                    style={[
-                      styles.modalOptionText,
-                      formData.feedbackPurpose === option.value &&
-                        styles.modalOptionTextSelected,
-                    ]}
-                  >
-                    {option.name}
-                  </Text>
+                  <Text style={styles.socialName}>{social.name}</Text>
+                  <Text style={styles.socialUrl}>{social.url}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-          </TouchableOpacity>
-        </Modal>
-      </View>
-    </ScrollView>
+          </View>
+
+          {/* Feedback Form Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Send a Message to Us</Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Name</Text>
+              <TextInput
+                style={styles.textInput}
+                value={formData.name}
+                onChangeText={(value) => handleInputChange("name", value)}
+                placeholder="Enter your name"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Reason</Text>
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => setIsDropdownVisible(true)}
+              >
+                <Text style={styles.dropdownButtonText}>
+                  {getFeedbackPurposeLabel(formData.feedbackPurpose)}
+                </Text>
+                <Text style={styles.dropdownArrow}>▼</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Feedback</Text>
+              <TextInput
+                style={[styles.textInput, styles.textArea]}
+                value={formData.feedback}
+                onChangeText={(value) => handleInputChange("feedback", value)}
+                placeholder="Please describe your issue or feedback..."
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                numberOfLines={5}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                isCreatingFeedback && styles.submitButtonDisabled,
+              ]}
+              onPress={handleSubmitFeedback}
+              disabled={isCreatingFeedback}
+            >
+              {isCreatingFeedback ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitButtonText}>Send</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Dropdown Modal */}
+          <Modal
+            visible={isDropdownVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setIsDropdownVisible(false)}
+          >
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setIsDropdownVisible(false)}
+            >
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Select Reason</Text>
+                {feedbackOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.modalOption,
+                      formData.feedbackPurpose === option.value &&
+                        styles.modalOptionSelected,
+                    ]}
+                    onPress={() => handleDropdownSelect(option.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.modalOptionText,
+                        formData.feedbackPurpose === option.value &&
+                          styles.modalOptionTextSelected,
+                      ]}
+                    >
+                      {option.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const createStyles = (colors: any) =>
   StyleSheet.create({
+    safeContainer: {
+      flex: 1,
+    },
     container: {
       flex: 1,
       backgroundColor: colors.background,

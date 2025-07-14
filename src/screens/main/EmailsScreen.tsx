@@ -32,7 +32,6 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -43,6 +42,7 @@ import {
   PanGestureHandler,
   State,
 } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 
 // Components
@@ -165,14 +165,14 @@ export const EmailsScreen = () => {
 
   const [startedLeftSwipe, setStartedLeftSwipe] = useState(false);
   const onPanGestureEvent = (event: any) => {
-    const { translationX, velocityX, state, x, y } = event.nativeEvent;
+    const { translationX, translationY, velocityX, state, x } =
+      event.nativeEvent;
 
     // Check if gesture starts within 50px of the left edge
     const isNearLeftEdge = x <= 30;
 
-    // Check if gesture is in the context view area (header + context filter area)
-    const contextViewAreaHeight = 120;
-    const isInContextViewArea = y <= contextViewAreaHeight;
+    // Only handle horizontal gestures, let vertical gestures pass through to FlatList
+    const isHorizontalGesture = Math.abs(translationX) > Math.abs(translationY);
 
     if (state === State.BEGAN) {
       if (isNearLeftEdge) {
@@ -193,8 +193,8 @@ export const EmailsScreen = () => {
     }
 
     if (!sidebarVisible && (state === State.END || state === State.CANCELLED)) {
-      if (!isInContextViewArea) {
-        // Handle context view switching gestures only outside context view area
+      // Only handle horizontal gestures for context view switching
+      if (isHorizontalGesture) {
         const minSwipeDistance = 50;
         const minVelocity = 300;
 
@@ -304,7 +304,7 @@ export const EmailsScreen = () => {
   const filteredUserTasks = getFilteredUserTasks(
     userTasks,
     activeFilter,
-    selectedContextViewId,
+    selectedContextViewId || "important",
     searchQuery
   );
 
@@ -432,156 +432,166 @@ export const EmailsScreen = () => {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <PanGestureHandler onHandlerStateChange={onPanGestureEvent}>
-        <SafeAreaView style={styles.container}>
-          <Header
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onMenuPress={openSidebar}
-          />
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <Header
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onMenuPress={openSidebar}
+        />
 
-          {/* Only show ContextFilter when not in drafts mode */}
-          {activeFilter !== "draft" &&
-            activeFilter !== "sent" &&
-            activeFilter !== "trash" && (
-              <ContextFilter
-                contextViews={getContextViewList()}
-                selectedContextViewId={selectedContextViewId}
-                contextViewSwitchAnimation={contextViewSwitchAnimation}
-                onContextViewSelect={setSelectedContextViewId}
-                onSwitchToNext={switchToNextContextView}
-                onSwitchToPrevious={switchToPreviousContextView}
-              />
-            )}
-
-          {/* Show email drafts when draft filter is active */}
-          {activeFilter === "draft" && (
-            <>
-              {filteredEmailDrafts.length === 0 && !isLoading && (
-                <View style={styles.emptyStateContainer}>
-                  <MaterialIcons
-                    name="drafts"
-                    size={64}
-                    color={colors.textSecondary}
-                  />
-                  <Text style={styles.emptyStateTitle}>No Drafts</Text>
-                  <Text style={styles.emptyStateText}>
-                    You do not have any email drafts yet.
-                  </Text>
-                </View>
-              )}
-
-              {filteredEmailDrafts.length > 0 && (
-                <FlatList
-                  data={filteredEmailDrafts}
-                  renderItem={renderEmailDraft}
-                  keyExtractor={(item) => item.id}
-                  style={styles.emailsList}
-                  contentContainerStyle={styles.emailsContainer}
-                  showsVerticalScrollIndicator={false}
-                  refreshing={isLoading}
-                  onRefresh={() => {
-                    dispatch(fetchMyToolExecutionsAsync());
-                  }}
-                />
-              )}
-            </>
+        {/* Only show ContextFilter when not in drafts mode */}
+        {activeFilter !== "draft" &&
+          activeFilter !== "sent" &&
+          activeFilter !== "trash" && (
+            <ContextFilter
+              contextViews={getContextViewList()}
+              selectedContextViewId={selectedContextViewId || "important"}
+              contextViewSwitchAnimation={contextViewSwitchAnimation}
+              onContextViewSelect={setSelectedContextViewId}
+              onSwitchToNext={switchToNextContextView}
+              onSwitchToPrevious={switchToPreviousContextView}
+            />
           )}
 
-          {/* Show sent emails when sent filter is active */}
-          {activeFilter === "sent" && (
-            <>
-              {filteredEmails.length === 0 && !emailsLoading && (
-                <View style={styles.emptyStateContainer}>
-                  <MaterialIcons
-                    name="send"
-                    size={64}
-                    color={colors.textSecondary}
-                  />
-                  <Text style={styles.emptyStateTitle}>No Sent Emails</Text>
-                  <Text style={styles.emptyStateText}>
-                    You have not sent any emails yet.
-                  </Text>
-                </View>
-              )}
-
-              {filteredEmails.length > 0 && (
-                <FlatList
-                  data={filteredEmails}
-                  renderItem={renderEmail}
-                  keyExtractor={(item) => item.id}
-                  style={styles.emailsList}
-                  contentContainerStyle={styles.emailsContainer}
-                  showsVerticalScrollIndicator={false}
-                  refreshing={emailsLoading}
-                  onRefresh={() => {
-                    dispatch(fetchMyEmailsAsync());
-                  }}
-                />
-              )}
-            </>
-          )}
-
-          {/* Show trashed emails when trash filter is active */}
-          {activeFilter === "trash" && (
-            <>
-              {filteredEmails.length === 0 && !emailsLoading && (
-                <View style={styles.emptyStateContainer}>
-                  <MaterialIcons
-                    name="delete"
-                    size={64}
-                    color={colors.textSecondary}
-                  />
-                  <Text style={styles.emptyStateTitle}>No Trashed Emails</Text>
-                  <Text style={styles.emptyStateText}>
-                    You do not have any trashed emails.
-                  </Text>
-                </View>
-              )}
-
-              {filteredEmails.length > 0 && (
-                <FlatList
-                  data={filteredEmails}
-                  renderItem={renderEmail}
-                  keyExtractor={(item) => item.id}
-                  style={styles.emailsList}
-                  contentContainerStyle={styles.emailsContainer}
-                  showsVerticalScrollIndicator={false}
-                  refreshing={emailsLoading}
-                  onRefresh={() => {
-                    dispatch(fetchMyEmailsAsync());
-                  }}
-                />
-              )}
-            </>
-          )}
-
-          {/* Show user tasks for other filters (not draft, not sent, not trash) */}
-          {activeFilter !== "draft" &&
-            activeFilter !== "sent" &&
-            activeFilter !== "trash" && (
+        <PanGestureHandler
+          onHandlerStateChange={onPanGestureEvent}
+          activeOffsetX={[-20, 20]}
+          failOffsetY={[-20, 20]}
+        >
+          <View style={styles.contentContainer}>
+            {/* Show email drafts when draft filter is active */}
+            {activeFilter === "draft" && (
               <>
-                {filteredUserTasks.length === 0 && !isLoading && <EmptyState />}
+                {filteredEmailDrafts.length === 0 && !isLoading && (
+                  <View style={styles.emptyStateContainer}>
+                    <MaterialIcons
+                      name="drafts"
+                      size={64}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.emptyStateTitle}>No Drafts</Text>
+                    <Text style={styles.emptyStateText}>
+                      You do not have any email drafts yet.
+                    </Text>
+                  </View>
+                )}
 
-                {filteredUserTasks.length > 0 && (
+                {filteredEmailDrafts.length > 0 && (
                   <FlatList
-                    data={filteredUserTasks}
-                    renderItem={renderUserTask}
+                    data={filteredEmailDrafts}
+                    renderItem={renderEmailDraft}
                     keyExtractor={(item) => item.id}
                     style={styles.emailsList}
                     contentContainerStyle={styles.emailsContainer}
                     showsVerticalScrollIndicator={false}
-                    refreshing={isLoading || scenariosLoading}
+                    refreshing={isLoading}
                     onRefresh={() => {
-                      dispatch(fetchUserTasksAsync({}));
-                      dispatch(fetchMyScenarios());
+                      dispatch(fetchMyToolExecutionsAsync());
                     }}
                   />
                 )}
               </>
             )}
-        </SafeAreaView>
-      </PanGestureHandler>
+
+            {/* Show sent emails when sent filter is active */}
+            {activeFilter === "sent" && (
+              <>
+                {filteredEmails.length === 0 && !emailsLoading && (
+                  <View style={styles.emptyStateContainer}>
+                    <MaterialIcons
+                      name="send"
+                      size={64}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.emptyStateTitle}>No Sent Emails</Text>
+                    <Text style={styles.emptyStateText}>
+                      You have not sent any emails yet.
+                    </Text>
+                  </View>
+                )}
+
+                {filteredEmails.length > 0 && (
+                  <FlatList
+                    data={filteredEmails}
+                    renderItem={renderEmail}
+                    keyExtractor={(item) => item.id}
+                    style={styles.emailsList}
+                    contentContainerStyle={styles.emailsContainer}
+                    showsVerticalScrollIndicator={false}
+                    refreshing={emailsLoading}
+                    onRefresh={() => {
+                      dispatch(fetchMyEmailsAsync());
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Show trashed emails when trash filter is active */}
+            {activeFilter === "trash" && (
+              <>
+                {filteredEmails.length === 0 && !emailsLoading && (
+                  <View style={styles.emptyStateContainer}>
+                    <MaterialIcons
+                      name="delete"
+                      size={64}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.emptyStateTitle}>
+                      No Trashed Emails
+                    </Text>
+                    <Text style={styles.emptyStateText}>
+                      You do not have any trashed emails.
+                    </Text>
+                  </View>
+                )}
+
+                {filteredEmails.length > 0 && (
+                  <FlatList
+                    data={filteredEmails}
+                    renderItem={renderEmail}
+                    keyExtractor={(item) => item.id}
+                    style={styles.emailsList}
+                    contentContainerStyle={styles.emailsContainer}
+                    showsVerticalScrollIndicator={false}
+                    refreshing={emailsLoading}
+                    onRefresh={() => {
+                      dispatch(fetchMyEmailsAsync());
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Show user tasks for other filters (not draft, not sent, not trash) */}
+            {activeFilter !== "draft" &&
+              activeFilter !== "sent" &&
+              activeFilter !== "trash" && (
+                <>
+                  {filteredUserTasks.length === 0 && !isLoading && (
+                    <EmptyState />
+                  )}
+
+                  {filteredUserTasks.length > 0 && (
+                    <FlatList
+                      data={filteredUserTasks}
+                      renderItem={renderUserTask}
+                      keyExtractor={(item) => item.id}
+                      style={styles.emailsList}
+                      contentContainerStyle={styles.emailsContainer}
+                      showsVerticalScrollIndicator={false}
+                      refreshing={isLoading || scenariosLoading}
+                      onRefresh={() => {
+                        dispatch(fetchUserTasksAsync({}));
+                        dispatch(fetchMyScenarios());
+                      }}
+                    />
+                  )}
+                </>
+              )}
+          </View>
+        </PanGestureHandler>
+      </SafeAreaView>
 
       {sidebarVisible && (
         <TouchableOpacity
@@ -617,6 +627,9 @@ const createStyles = (colors: any) =>
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    contentContainer: {
+      flex: 1,
     },
     emailsList: {
       flex: 1,

@@ -1,39 +1,37 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  TextInput,
-  ScrollView,
-  Platform,
-  Keyboard,
-  useWindowDimensions,
-} from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RouteProp } from "@react-navigation/native";
+import { EmailContextView } from "@/components/context/EmailContextView";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useTheme } from "@/hooks/useTheme";
 import {
+  fetchEmailByIdAsync,
+  fetchEmailsByThreadIdAsync,
+} from "@/store/slices/emailSlice";
+import {
+  clearCurrentTodo,
+  clearError,
   fetchTodoByIdAsync,
   updateTodoAsync,
   updateTodoStateAsync,
-  clearError,
-  clearCurrentTodo,
 } from "@/store/slices/todoSlice";
-import {
-  fetchEmailsByThreadIdAsync,
-  fetchEmailByIdAsync,
-} from "@/store/slices/emailSlice";
-import { Todo, TodoState } from "@/types/todo";
 import { Email } from "@/types/email";
 import { AppStackParamList } from "@/types/navigation";
-import { useTheme } from "@/hooks/useTheme";
-import { EmailContextView } from "@/components/context/EmailContextView";
+import { TodoState } from "@/types/todo";
+import { MaterialIcons } from "@expo/vector-icons";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type TodoDetailScreenNavigationProp = NativeStackNavigationProp<
   AppStackParamList,

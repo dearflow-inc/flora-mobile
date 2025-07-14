@@ -1,31 +1,30 @@
+import { API_CONFIG } from "@/config/api";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import {
+  Chat,
+  ChatMessage,
+  addMessage,
+  setCurrentChatId,
+  updateChat,
+} from "@/store/slices/chatSlice";
+import { updateEmailFromWebSocket } from "@/store/slices/emailSlice";
+import { updateTodoFromWebSocket } from "@/store/slices/todoSlice";
+import { updateToolExecutionFromWebSocket } from "@/store/slices/toolExecutionSlice";
+import { updateUserTaskFromWebSocket } from "@/store/slices/userTaskSlice";
+import { Email } from "@/types/email";
+import { Todo } from "@/types/todo";
+import { ToolExecution } from "@/types/toolExecution";
+import { UserTask } from "@/types/userTask";
 import React, {
+  ReactNode,
   createContext,
   useContext,
   useEffect,
   useReducer,
-  ReactNode,
+  useRef,
 } from "react";
-import { Socket, io } from "socket.io-client";
 import { AppState, AppStateStatus } from "react-native";
-import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { API_CONFIG } from "@/config/api";
-import {
-  addMessage,
-  updateMessage,
-  setAiIsWorking,
-  setCurrentChatId,
-  updateChat,
-  ChatMessage,
-  Chat,
-} from "@/store/slices/chatSlice";
-import { updateTodoFromWebSocket } from "@/store/slices/todoSlice";
-import { updateEmailFromWebSocket } from "@/store/slices/emailSlice";
-import { updateToolExecutionFromWebSocket } from "@/store/slices/toolExecutionSlice";
-import { updateUserTaskFromWebSocket } from "@/store/slices/userTaskSlice";
-import { Todo } from "@/types/todo";
-import { Email } from "@/types/email";
-import { ToolExecution } from "@/types/toolExecution";
-import { UserTask } from "@/types/userTask";
+import { Socket, io } from "socket.io-client";
 
 interface SocketEvent {
   event: string;
@@ -44,10 +43,13 @@ enum SocketEvents {
 interface WebSocketState {
   connection?: Socket;
   connected: boolean;
+  isConnecting: boolean;
+  connectionAttempts: number;
 }
 
 interface WebSocketContextValue extends WebSocketState {
   emitMessage: (event: string, data?: any) => void;
+  reconnect: () => void;
 }
 
 interface WebSocketProviderProps {
@@ -59,13 +61,33 @@ type SetConnectionAction = {
   payload: {
     connection?: Socket;
     connected: boolean;
+    isConnecting?: boolean;
   };
 };
 
-type Action = SetConnectionAction;
+type SetConnectingAction = {
+  type: "SET_CONNECTING";
+  payload: boolean;
+};
+
+type IncrementAttemptsAction = {
+  type: "INCREMENT_ATTEMPTS";
+};
+
+type ResetAttemptsAction = {
+  type: "RESET_ATTEMPTS";
+};
+
+type Action =
+  | SetConnectionAction
+  | SetConnectingAction
+  | IncrementAttemptsAction
+  | ResetAttemptsAction;
 
 const initialState: WebSocketState = {
   connected: false,
+  isConnecting: false,
+  connectionAttempts: 0,
 };
 
 const reducer = (state: WebSocketState, action: Action): WebSocketState => {
@@ -75,6 +97,22 @@ const reducer = (state: WebSocketState, action: Action): WebSocketState => {
         ...state,
         connection: action.payload.connection,
         connected: action.payload.connected,
+        isConnecting: action.payload.isConnecting ?? false,
+      };
+    case "SET_CONNECTING":
+      return {
+        ...state,
+        isConnecting: action.payload,
+      };
+    case "INCREMENT_ATTEMPTS":
+      return {
+        ...state,
+        connectionAttempts: state.connectionAttempts + 1,
+      };
+    case "RESET_ATTEMPTS":
+      return {
+        ...state,
+        connectionAttempts: 0,
       };
     default:
       return state;
@@ -84,6 +122,7 @@ const reducer = (state: WebSocketState, action: Action): WebSocketState => {
 const WebSocketContext = createContext<WebSocketContextValue>({
   ...initialState,
   emitMessage: () => {},
+  reconnect: () => {},
 });
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
@@ -94,14 +133,45 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     (state) => state.auth
   );
   const [state, localDispatch] = useReducer(reducer, initialState);
+  const connectionRef = useRef<Socket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup function for WebSocket connection
+  const cleanupConnection = () => {
+    if (connectionRef.current) {
+      console.log("Cleaning up WebSocket connection");
+      connectionRef.current.disconnect();
+      connectionRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  };
 
   // Initialize WebSocket connection
   useEffect(() => {
-    if (!isAuthenticated || !authToken || !refreshToken || state.connected) {
+    if (!isAuthenticated || !authToken || !refreshToken) {
+      console.log("WebSocket: Not authenticated or missing tokens");
+      cleanupConnection();
+      localDispatch({
+        type: "SET_CONNECTION",
+        payload: {
+          connection: undefined,
+          connected: false,
+          isConnecting: false,
+        },
+      });
+      return;
+    }
+
+    if (state.connected || state.isConnecting) {
+      console.log("WebSocket: Already connected or connecting");
       return;
     }
 
     console.log("Connecting to WebSocket...");
+    localDispatch({ type: "SET_CONNECTING", payload: true });
 
     const connection = io(`${API_CONFIG.API_BASE_URL}/primary-gateway`, {
       withCredentials: true,
@@ -109,7 +179,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         Authorization: `JWT ${authToken};;;;;${refreshToken}`,
       },
       transports: ["websocket"],
+      timeout: 10000, // 10 second timeout
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
+
+    connectionRef.current = connection;
 
     connection.on("connect", () => {
       console.log("Connected to WebSocket");
@@ -119,44 +195,67 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         payload: {
           connection,
           connected: true,
+          isConnecting: false,
         },
       });
+      localDispatch({ type: "RESET_ATTEMPTS" });
     });
 
-    connection.on("disconnect", () => {
-      console.log("Disconnected from WebSocket");
+    connection.on("disconnect", (reason) => {
+      console.log("Disconnected from WebSocket:", reason);
       localDispatch({
         type: "SET_CONNECTION",
         payload: {
           connection: undefined,
           connected: false,
+          isConnecting: false,
         },
       });
+
+      // Auto-reconnect if it wasn't a manual disconnect
+      if (reason !== "io client disconnect" && isAuthenticated) {
+        console.log("Attempting to reconnect...");
+        localDispatch({ type: "INCREMENT_ATTEMPTS" });
+
+        // Exponential backoff for reconnection
+        const delay = Math.min(
+          1000 * Math.pow(2, state.connectionAttempts),
+          30000
+        );
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (isAuthenticated && authToken && refreshToken) {
+            localDispatch({ type: "SET_CONNECTING", payload: true });
+            connection.connect();
+          }
+        }, delay);
+      }
     });
 
     connection.on("connect_error", (error) => {
+      console.error("WebSocket connection error:", error);
       localDispatch({
         type: "SET_CONNECTION",
         payload: {
           connection: undefined,
           connected: false,
+          isConnecting: false,
         },
       });
+      localDispatch({ type: "INCREMENT_ATTEMPTS" });
     });
 
     return () => {
-      /* console.log("Cleaning up WebSocket connection");
-      connection.disconnect(); */
+      cleanupConnection();
     };
-  }, [isAuthenticated, authToken, refreshToken, state.connection]);
+  }, [isAuthenticated, authToken, refreshToken]);
 
   // Handle app state changes (foreground/background)
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === "active" && !state.connected && isAuthenticated) {
         console.log("App became active, attempting to reconnect WebSocket");
-        if (state.connection) {
-          state.connection.connect();
+        if (connectionRef.current) {
+          connectionRef.current.connect();
         }
       }
     };
@@ -169,7 +268,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     return () => {
       subscription?.remove();
     };
-  }, [state.connected, state.connection, isAuthenticated]);
+  }, [state.connected, isAuthenticated]);
 
   // Set up event listeners
   useEffect(() => {
@@ -225,6 +324,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     };
   }, [state.connection, dispatch]);
 
+  // Manual reconnect function
+  const reconnect = () => {
+    if (connectionRef.current) {
+      console.log("Manual reconnect requested");
+      connectionRef.current.disconnect();
+      connectionRef.current.connect();
+    }
+  };
+
   // Emit message function
   const emitMessage = (event: string, data?: any) => {
     if (!state.connection || !state.connected) {
@@ -241,6 +349,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       value={{
         ...state,
         emitMessage,
+        reconnect,
       }}
     >
       {children}

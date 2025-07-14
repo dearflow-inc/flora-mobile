@@ -1,29 +1,27 @@
-import React, { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useTheme } from "@/hooks/useTheme";
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-} from "react-native";
+  clearError,
+  fetchTodosAsync,
+  updateTodoStateAsync,
+} from "@/store/slices/todoSlice";
+import { AppStackParamList } from "@/types/navigation";
+import { Todo, TodoSortBy, TodoState } from "@/types/todo";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import React, { useEffect, useState } from "react";
 import {
-  fetchTodosAsync,
-  updateTodoStateAsync,
-  clearError,
-  resetTodos,
-} from "@/store/slices/todoSlice";
-import { Todo, TodoState, TodoSortBy } from "@/types/todo";
-import { AppStackParamList } from "@/types/navigation";
-import { todoService } from "@/services/todoService";
-import { useTheme } from "@/hooks/useTheme";
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type TodosScreenNavigationProp = NativeStackNavigationProp<
   AppStackParamList,
@@ -197,7 +195,7 @@ export const TodosScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Todos</Text>
         <Text style={styles.headerSubtitle}>

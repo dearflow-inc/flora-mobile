@@ -17,13 +17,13 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { ComposeEmail } from "../../components/tool-execution/ComposeEmail";
 import { EditReplyEmail } from "../../components/tool-execution/EditReplyEmail";
@@ -183,7 +183,7 @@ export const ToolExecutionScreen = () => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading...</Text>
@@ -194,7 +194,7 @@ export const ToolExecutionScreen = () => {
 
   if (!currentToolExecution) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.errorContainer}>
           <MaterialIcons name="error-outline" size={64} color="#FF5722" />
           <Text style={styles.errorText}>Tool execution not found</Text>
@@ -207,7 +207,7 @@ export const ToolExecutionScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerButton} onPress={handleBack}>
           <MaterialIcons name="arrow-back" size={24} color={colors.text} />
@@ -230,7 +230,6 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
-
       backgroundColor: colors.background,
     },
     loadingContainer: {

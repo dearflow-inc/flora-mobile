@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useTheme } from "@/hooks/useTheme";
+import { RootState } from "@/store";
 import { fetchChatAsync } from "@/store/slices/chatSlice";
 import { fetchUserInfoAsync } from "@/store/slices/profileSlice";
 import { OnboardingStackParamList } from "@/types/navigation";
-import { useTheme } from "@/hooks/useTheme";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
-import { RootState } from "@/store";
 
 type FetchingUserInfoScreenNavigationProp = NativeStackNavigationProp<
   OnboardingStackParamList,
@@ -128,7 +127,7 @@ export const FetchingUserInfoScreen = () => {
         <View style={styles.header}>
           <Text style={styles.title}>Reading your inbox...</Text>
           <Text style={styles.subtitle}>
-            We're preparing your personalized onboarding experience
+            W are preparing your personalized onboarding experience
           </Text>
         </View>
 

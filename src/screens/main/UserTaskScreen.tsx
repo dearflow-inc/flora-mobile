@@ -35,8 +35,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  RefreshControl,
-  SafeAreaView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -44,6 +43,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 // import { VideoContextView } from "@/components/context/VideoContextView";
 import { TaskActionComponent } from "@/components/actions/TaskActionComponent";
@@ -80,6 +80,7 @@ export const UserTaskScreen = () => {
   const [isMenuModalVisible, setIsMenuModalVisible] = useState(false);
   const [isSnoozeModalVisible, setIsSnoozeModalVisible] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [isLoadingContext, setIsLoadingContext] = useState(false);
   const [contextData, setContextData] = useState<{
     emails?: Email[];
     videos?: any[];
@@ -116,12 +117,17 @@ export const UserTaskScreen = () => {
   useEffect(() => {
     if (userTask?.context) {
       loadContextData();
+    } else {
+      // Reset context data and loading state when there's no context
+      setContextData({});
+      setIsLoadingContext(false);
     }
-  }, [userTask]);
+  }, [userTask?.id]);
 
   const loadContextData = async () => {
     if (!userTask?.context) return;
 
+    setIsLoadingContext(true);
     const emails: Email[] = [];
     const videos: any[] = [];
 
@@ -171,6 +177,7 @@ export const UserTaskScreen = () => {
     }
 
     setContextData({ emails, videos });
+    setIsLoadingContext(false);
   };
 
   const handleRefresh = async () => {
@@ -528,13 +535,31 @@ export const UserTaskScreen = () => {
       userTask.status === UserTaskStatus.COMPLETED ||
       userTask.status === UserTaskStatus.COMPLETED_EXTERNAL;
 
+    // Show loading indicator while context is being fetched
+    if (isLoadingContext) {
+      return (
+        <View
+          style={[
+            styles.contextContainer,
+            { justifyContent: "center", alignItems: "center" },
+          ]}
+        >
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { marginTop: 16 }]}>
+            Loading context...
+          </Text>
+        </View>
+      );
+    }
+
     const getWebViewHeight = () => {
       if (isCompleted) {
-        // Full height minus header for completed tasks
-        return Math.floor(height - 120);
+        // Full height minus header and task info for completed tasks
+        return Math.floor(height - 180); // Reduced from 120 to account for task info
       }
-      // Original height calculation for pending tasks
-      return Math.floor(height - (pendingActions?.length || 0 ? 335 : 300));
+      // Height calculation for pending tasks - context should fill remaining space
+      // We don't need to set a fixed height, let flex handle it
+      return undefined;
     };
 
     return (
@@ -545,6 +570,7 @@ export const UserTaskScreen = () => {
             height: getWebViewHeight(),
             maxHeight: getWebViewHeight(),
             width: width,
+            flex: isCompleted ? undefined : 1, // Use flex for pending tasks
           },
         ]}
       >
@@ -670,7 +696,7 @@ export const UserTaskScreen = () => {
 
   if (isLoading && !userTask) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading task...</Text>
@@ -681,7 +707,7 @@ export const UserTaskScreen = () => {
 
   if (!userTask) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.errorContainer}>
           <MaterialIcons name="error" size={48} color={colors.danger} />
           <Text style={styles.errorTitle}>Task Not Found</Text>
@@ -697,7 +723,7 @@ export const UserTaskScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -789,33 +815,21 @@ export const UserTaskScreen = () => {
 
       {/* Content - takes up remaining space */}
       <View style={styles.contentContainer}>
-        <ScrollView
-          style={styles.scrollView}
-          scrollEnabled={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              colors={[colors.primary]}
-            />
-          }
-        >
-          {/* Task Info */}
-          <View style={styles.taskInfoContainer}>
-            <View style={styles.taskHeader}>
-              <Text style={styles.taskTitle}>
-                {userTask.title || userTask.description}
-              </Text>
-            </View>
-
-            {userTask.title && userTask.description !== userTask.title && (
-              <Text style={styles.taskDescription}>{userTask.description}</Text>
-            )}
+        {/* Task Info */}
+        <View style={styles.taskInfoContainer}>
+          <View style={styles.taskHeader}>
+            <Text style={styles.taskTitle}>
+              {userTask.title || userTask.description}
+            </Text>
           </View>
 
-          {/* Context Section - takes up remaining space */}
-          <View style={styles.contextWrapper}>{renderContext()}</View>
-        </ScrollView>
+          {userTask.title && userTask.description !== userTask.title && (
+            <Text style={styles.taskDescription}>{userTask.description}</Text>
+          )}
+        </View>
+
+        {/* Context Section - takes up remaining space */}
+        <View style={styles.contextWrapper}>{renderContext()}</View>
       </View>
 
       {/* Fixed Bottom Buttons */}
@@ -994,9 +1008,7 @@ const createStyles = (colors: any) =>
     headerButton: {
       padding: 8,
     },
-    scrollView: {
-      flex: 1,
-    },
+
     taskInfoContainer: {
       backgroundColor: colors.surface,
       padding: 16,
@@ -1096,6 +1108,7 @@ const createStyles = (colors: any) =>
     contextWrapper: {
       flex: 1,
       backgroundColor: colors.surface,
+      minHeight: 0, // This ensures flex: 1 works properly
     },
     bottomButtonsContainer: {
       backgroundColor: colors.surface,
@@ -1111,7 +1124,7 @@ const createStyles = (colors: any) =>
     },
     modalOverlay: {
       position: "absolute",
-      top: 60,
+      top: Platform.OS === "android" ? 0 : 60,
       left: 0,
       right: 0,
       bottom: 0,
@@ -1131,7 +1144,7 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.surface,
       borderRadius: 12,
       padding: 8,
-      marginTop: 60, // Position below the header
+      marginTop: Platform.OS === "android" ? 100 : 60, // Position below the header
       marginRight: 16,
       minWidth: 160,
       shadowColor: "#000",

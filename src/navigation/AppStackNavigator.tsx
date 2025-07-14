@@ -1,21 +1,21 @@
-import React from "react";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { MaterialIcons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { MainTabParamList, AppStackParamList } from "@/types/navigation";
+import { NavigationListener } from "@/components/NavigationListener";
+import { useTheme } from "@/hooks/useTheme";
 import { ChatScreen } from "@/screens/main/ChatScreen";
+import { ContactSupportScreen } from "@/screens/main/ContactSupportScreen";
 import { EmailsScreen } from "@/screens/main/EmailsScreen";
-import { TodosScreen } from "@/screens/main/TodosScreen";
-import { TodoDetailScreen } from "@/screens/main/TodoDetailScreen";
+import { EmailThreadScreen } from "@/screens/main/EmailThreadScreen";
 import { ProfileScreen } from "@/screens/main/ProfileScreen";
 import { SettingsScreen } from "@/screens/main/SettingsScreen";
-import { ContactSupportScreen } from "@/screens/main/ContactSupportScreen";
+import { TodoDetailScreen } from "@/screens/main/TodoDetailScreen";
+import { TodosScreen } from "@/screens/main/TodosScreen";
 import { ToolExecutionScreen } from "@/screens/main/ToolExecutionScreen";
 import { UserTaskScreen } from "@/screens/main/UserTaskScreen";
-import { EmailThreadScreen } from "@/screens/main/EmailThreadScreen";
-import { useTheme } from "@/hooks/useTheme";
-import { NavigationListener } from "@/components/NavigationListener";
+import { AppStackParamList, MainTabParamList } from "@/types/navigation";
+import { MaterialIcons } from "@expo/vector-icons";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from "react";
+import { View } from "react-native";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -24,10 +24,7 @@ const MainTabNavigator = () => {
   const { colors } = useTheme();
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      edges={["top"]}
-    >
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <NavigationListener />
       <Tab.Navigator
         initialRouteName="Emails"
@@ -69,7 +66,7 @@ const MainTabNavigator = () => {
         <Tab.Screen name="Todos" component={TodosScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
-    </SafeAreaView>
+    </View>
   );
 };
 

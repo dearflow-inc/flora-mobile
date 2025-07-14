@@ -1,6 +1,9 @@
 import { useTheme } from "@/hooks/useTheme";
-import { AppDispatch } from "@/store";
-import { deleteToolExecutionAsync } from "@/store/slices/toolExecutionSlice";
+import { AppDispatch, RootState } from "@/store";
+import {
+  deleteToolExecutionAsync,
+  removeToolExecutionFromList,
+} from "@/store/slices/toolExecutionSlice";
 import {
   ToolExecution,
   parseEmailDraftFromToolExecution,
@@ -17,7 +20,7 @@ import {
   View,
 } from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 const { width: screenWidth } = Dimensions.get("window");
 const SWIPE_THRESHOLD = screenWidth * 0.25;
@@ -36,6 +39,10 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
   const translateX = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
   const backgroundOpacity = useRef(new Animated.Value(0)).current;
+
+  // Get drafts from store to detect when this draft is removed
+  const drafts = useSelector((state: RootState) => state.toolExecutions.drafts);
+  const isDraftInStore = drafts.some((draft) => draft.id === toolExecution.id);
 
   const styles = createStyles(colors);
   const emailData = parseEmailDraftFromToolExecution(toolExecution);
@@ -67,8 +74,14 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
 
   const handleDelete = async () => {
     try {
+      // Optimistically remove the draft from the store immediately
+      dispatch(removeToolExecutionFromList(toolExecution.id));
+
+      // Then make the API call in the background
       await dispatch(deleteToolExecutionAsync(toolExecution.id)).unwrap();
     } catch (error) {
+      // If the API call fails, we could restore the draft here
+      // For now, just show an error alert
       Alert.alert("Error", "Failed to delete draft. Please try again.");
     }
   };
@@ -130,6 +143,11 @@ export const EmailDraftItem: React.FC<EmailDraftItemProps> = ({
       }
     }
   };
+
+  // Don't render if the draft is no longer in the store
+  if (!isDraftInStore) {
+    return null;
+  }
 
   return (
     <View style={styles.draftItemContainer}>

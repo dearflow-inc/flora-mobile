@@ -1,22 +1,17 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  SafeAreaView,
-  ActivityIndicator,
-} from "react-native";
-import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { ChatView } from "@/components/ChatView";
+import { WebSocketStatusIndicator } from "@/components/WebSocketStatusIndicator";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useTheme } from "@/hooks/useTheme";
 import {
   fetchEmailsOnboardingAsync,
   updateMyProfileAsync,
 } from "@/store/slices/profileSlice";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useNavigation } from "@react-navigation/native";
 import { OnboardingStackParamList } from "@/types/navigation";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type OnboardingChatScreenNavigationProp = NativeStackNavigationProp<
   OnboardingStackParamList,
@@ -65,12 +60,14 @@ export const OnboardingChatScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <Text style={styles.subtitle}>
           Flora has learned about your inbox but needs a little more information
           before we start.
         </Text>
+        {/* Add WebSocket status indicator for debugging */}
+        <WebSocketStatusIndicator showDetails={true} />
       </View>
 
       <ChatView
@@ -91,7 +88,7 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      marginBottom: 60,
     },
     header: {
       alignItems: "center",
