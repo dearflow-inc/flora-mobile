@@ -1,4 +1,3 @@
-import { createApiInstance } from "@/config/api";
 import {
   CreateToolExecutionRequest,
   ExecuteToolExecutionRequest,
@@ -8,6 +7,7 @@ import {
   ToolExecutionsResponse,
   UpdateToolExecutionRequest,
 } from "@/types/toolExecution";
+import { createApiInstance } from "@/utils/apiInstance";
 import { AxiosInstance } from "axios";
 
 class ToolExecutionService {

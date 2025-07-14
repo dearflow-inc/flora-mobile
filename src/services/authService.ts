@@ -1,4 +1,3 @@
-import { createApiInstance } from "@/config/api";
 import {
   AuthResponse,
   AuthUserUsage,
@@ -10,6 +9,7 @@ import {
   VerifyEmailResponse,
   sendVerificationCodeResponse,
 } from "@/types/auth";
+import { createApiInstance } from "@/utils/apiInstance";
 import { AxiosInstance } from "axios";
 
 class AuthService {

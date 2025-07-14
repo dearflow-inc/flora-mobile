@@ -1,4 +1,4 @@
-import { createApiInstance } from "@/config/api";
+import { createApiInstance } from "@/utils/apiInstance";
 import { AxiosInstance } from "axios";
 
 export interface RegenerateTextRequest {

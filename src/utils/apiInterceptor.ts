@@ -1,5 +1,13 @@
-import { addLocalDelay } from "@/config/api";
 import { AxiosInstance } from "axios";
+import Constants from "expo-constants";
+
+// Utility function to add delay for local environment
+export const addLocalDelay = async (): Promise<void> => {
+  const environment = Constants.expoConfig?.extra?.ENVIRONMENT;
+  if (environment === "local") {
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 seconds delay
+  }
+};
 
 /**
  * Adds a request interceptor to an axios instance that delays requests by 2 seconds

@@ -1,22 +1,22 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import {
-  AuthState,
-  User,
-  LoginCredentials,
-  RegisterCredentials,
-  AuthResponse,
-  AuthUserUsage,
-} from "@/types/auth";
 import { authService } from "@/services/authService";
-import { todoService } from "@/services/todoService";
-import { profileService } from "@/services/profileService";
+import { contactService } from "@/services/contactService";
 import { emailService } from "@/services/emailService";
+import { profileService } from "@/services/profileService";
+import { regenerateTextService } from "@/services/regenerateTextService";
+import { scenariosService } from "@/services/scenariosService";
+import { secureStorage } from "@/services/secureStorage";
+import { todoService } from "@/services/todoService";
 import { toolExecutionService } from "@/services/toolExecutionService";
 import { userTaskService } from "@/services/userTaskService";
-import { scenariosService } from "@/services/scenariosService";
-import { regenerateTextService } from "@/services/regenerateTextService";
-import { contactService } from "@/services/contactService";
-import { secureStorage } from "@/services/secureStorage";
+import {
+  AuthResponse,
+  AuthState,
+  AuthUserUsage,
+  LoginCredentials,
+  RegisterCredentials,
+  User,
+} from "@/types/auth";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { clearAllProfileData } from "./profileSlice";
 
 const initialState: AuthState = {
@@ -47,6 +47,31 @@ export const signInAsync = createAsyncThunk<
     return response;
   } catch (error: any) {
     return rejectWithValue(error.message || "Sign in failed");
+  }
+});
+
+export const googleSignInAsync = createAsyncThunk<
+  AuthResponse,
+  { authToken: string; refreshToken: string; user: User },
+  { rejectValue: string }
+>("auth/googleSignIn", async (authData, { rejectWithValue }) => {
+  try {
+    // Store tokens securely
+    await secureStorage.setItem("auth_token", authData.authToken);
+    await secureStorage.setItem("refresh_token", authData.refreshToken);
+
+    // Return AuthResponse structure
+    return {
+      authUserId: authData.user.authUserId,
+      email: authData.user.email,
+      emailVerified: authData.user.emailVerified,
+      paymentPlans: authData.user.paymentPlans,
+      roles: authData.user.roles,
+      authToken: authData.authToken,
+      refreshToken: authData.refreshToken,
+    };
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Google sign in failed");
   }
 });
 
@@ -286,6 +311,73 @@ export const authSlice = createSlice({
       .addCase(signInAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || "Sign in failed";
+      })
+      // Google Sign In
+      .addCase(googleSignInAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(googleSignInAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = {
+          authUserId: action.payload.authUserId,
+          email: action.payload.email,
+          emailVerified: action.payload.emailVerified,
+          paymentPlans: action.payload.paymentPlans,
+          roles: action.payload.roles,
+          usage: {
+            canRun: false,
+            credits: 0,
+            usedCredits: 0,
+            storageUsed: 0,
+            storageAvailable: 50,
+          },
+        };
+        state.authToken = action.payload.authToken;
+        state.refreshToken = action.payload.refreshToken;
+        state.isAuthenticated = true;
+        state.error = null;
+
+        // Set the tokens in the service for API calls
+        authService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        todoService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        profileService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        emailService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        toolExecutionService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        userTaskService.setAuthToken(
+          `JWT ${action.payload.authToken};;;;;${action.payload.refreshToken}`
+        );
+        scenariosService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        regenerateTextService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        contactService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+      })
+      .addCase(googleSignInAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Google sign in failed";
       })
       // Sign Up
       .addCase(signUpAsync.pending, (state) => {

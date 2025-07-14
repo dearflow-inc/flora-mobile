@@ -1,4 +1,3 @@
-import { createApiInstance } from "@/config/api";
 import {
   CreateTodoRequest,
   Todo,
@@ -7,6 +6,7 @@ import {
   UpdateTodoRequest,
   UpdateTodoStateRequest,
 } from "@/types/todo";
+import { createApiInstance } from "@/utils/apiInstance";
 import { AxiosInstance } from "axios";
 
 class TodoService {

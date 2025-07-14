@@ -1,4 +1,3 @@
-import { createApiInstance } from "@/config/api";
 import {
   ContextView,
   CreateContextViewRequest,
@@ -10,6 +9,7 @@ import {
   ScenarioTag,
   UpdateContextViewRequest,
 } from "@/types/scenarios";
+import { createApiInstance } from "@/utils/apiInstance";
 import { AxiosResponse } from "axios";
 
 class ScenariosService {

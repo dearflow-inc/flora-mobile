@@ -1,4 +1,3 @@
-import { createApiInstance } from "@/config/api";
 import {
   AddDocumentTypesRequest,
   AdminProfilesResponse,
@@ -13,6 +12,7 @@ import {
   UpdateMyProfileRequest,
   UpdateMyProfileResponse,
 } from "@/types/profile";
+import { createApiInstance } from "@/utils/apiInstance";
 import { AxiosInstance } from "axios";
 
 class ProfileService {

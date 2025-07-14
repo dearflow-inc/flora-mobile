@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Modal,
-  Linking,
-} from "react-native";
-import * as Device from "expo-device";
+import GmailIcon from "@/../assets/tools/GoogleMail.svg";
+import OutlookIcon from "@/../assets/tools/Outlook.svg";
+import { OAUTH_CONFIG } from "@/config/api";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useTheme } from "@/hooks/useTheme";
+import { secureStorage } from "@/services/secureStorage";
 import {
   fetchUserInfoAsync,
   updateMyProfileAsync,
 } from "@/store/slices/profileSlice";
-import GmailIcon from "@/../assets/tools/GoogleMail.svg";
-import OutlookIcon from "@/../assets/tools/Outlook.svg";
-import { initiateOAuth, handleOAuthCallback } from "@/utils/oauth";
-import { OAUTH_CONFIG } from "@/config/api";
-import { secureStorage } from "@/services/secureStorage";
-import { useTheme } from "@/hooks/useTheme";
+import { handleOAuthCallback, initiateOAuth } from "@/utils/oauth";
+import * as Device from "expo-device";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Linking,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface ConnectInboxModalProps {
   visible: boolean;
@@ -56,9 +56,8 @@ export const ConnectInboxModal = ({
     const handleDeepLink = async (event: { url: string }) => {
       // Check for both custom scheme and Expo Go scheme
       const isOAuthCallback =
-        event.url.includes(
-          `${OAUTH_CONFIG.DEEP_LINK_SCHEME}://oauth/callback`
-        ) || event.url.includes(`oauth/callback`);
+        event.url.includes(`${OAUTH_CONFIG.DEEP_LINK_SCHEME}/oauth/callback`) ||
+        event.url.includes(`oauth/callback`);
 
       if (isOAuthCallback) {
         try {

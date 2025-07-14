@@ -1,4 +1,3 @@
-import { createApiInstance } from "@/config/api";
 import {
   Contact,
   ContactResponse,
@@ -6,6 +5,7 @@ import {
   CreateContactRequest,
   UpdateContactRequest,
 } from "@/types/contact";
+import { createApiInstance } from "@/utils/apiInstance";
 import { AxiosInstance } from "axios";
 
 class ContactService {

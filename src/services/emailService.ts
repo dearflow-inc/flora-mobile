@@ -1,4 +1,3 @@
-import { createApiInstance } from "@/config/api";
 import {
   AddLookSessionRequest,
   Email,
@@ -11,6 +10,7 @@ import {
   SingleEmailResponse,
   UpdateEmailStatusRequest,
 } from "@/types/email";
+import { createApiInstance } from "@/utils/apiInstance";
 import { AxiosInstance } from "axios";
 
 class EmailService {

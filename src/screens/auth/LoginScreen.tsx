@@ -1,22 +1,35 @@
-import React, { useState } from "react";
+import GoogleIcon from "@/../assets/tools/Google.svg";
+import { OAUTH_CONFIG } from "@/config/api";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { secureStorage } from "@/services/secureStorage";
 import {
-  View,
+  clearError,
+  googleSignInAsync,
+  signInAsync,
+} from "@/store/slices/authSlice";
+import { fetchMyProfileAsync } from "@/store/slices/profileSlice";
+import { LoginCredentials, User } from "@/types/auth";
+import { AuthStackParamList } from "@/types/navigation";
+import {
+  handleGoogleSignInCallback,
+  initiateGoogleSignIn,
+} from "@/utils/oauth";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as Device from "expo-device";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
+  View,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { signInAsync, clearError } from "@/store/slices/authSlice";
-import { fetchMyProfileAsync } from "@/store/slices/profileSlice";
-import { AuthStackParamList } from "@/types/navigation";
-import { LoginCredentials } from "@/types/auth";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -27,6 +40,7 @@ export const LoginScreen = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
 
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: "",
@@ -37,6 +51,70 @@ export const LoginScreen = () => {
     email?: string;
     password?: string;
   }>({});
+
+  // Helper function to get device ID
+  const getDeviceId = async (): Promise<string> => {
+    let deviceId = await secureStorage.getItem("device_id");
+    if (!deviceId) {
+      deviceId =
+        Device.modelName + "_" + Math.random().toString(36).substring(2, 15);
+      await secureStorage.setItem("device_id", deviceId);
+    }
+    return deviceId;
+  };
+
+  // Handle Google Sign-In deep link
+  useEffect(() => {
+    const handleDeepLink = async (event: { url: string }) => {
+      const isGoogleSignInCallback = event.url.includes(
+        `${OAUTH_CONFIG.DEEP_LINK_SCHEME}/oauth/signin-callback`
+      );
+
+      if (isGoogleSignInCallback) {
+        try {
+          const result = await handleGoogleSignInCallback(event.url);
+
+          if (result.success && result.authToken && result.refreshToken) {
+            // Dispatch Google Sign-In action
+            await dispatch(
+              googleSignInAsync({
+                authToken: result.authToken,
+                refreshToken: result.refreshToken,
+                user: result.user as User,
+              })
+            ).unwrap();
+
+            // Fetch profile immediately
+            try {
+              await dispatch(fetchMyProfileAsync()).unwrap();
+              console.log("Profile fetched successfully after Google sign-in");
+            } catch (profileError) {
+              console.warn(
+                "Failed to fetch profile after Google sign-in:",
+                profileError
+              );
+            }
+          } else {
+            Alert.alert(
+              "Error",
+              result.error || "Google Sign-In failed. Please try again."
+            );
+          }
+        } catch (error) {
+          console.error("Google Sign-In error:", error);
+          Alert.alert("Error", "Google Sign-In failed. Please try again.");
+        } finally {
+          setIsGoogleSigningIn(false);
+        }
+      }
+    };
+
+    const subscription = Linking.addEventListener("url", handleDeepLink);
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [dispatch]);
 
   const validateForm = (): boolean => {
     const errors: typeof validationErrors = {};
@@ -81,6 +159,24 @@ export const LoginScreen = () => {
       // Navigation will be handled by the AppNavigator based on auth state
     } catch (error) {
       Alert.alert("Login Failed", error as string);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleSigningIn(true);
+
+    try {
+      // Get device information
+      const deviceId = await getDeviceId();
+      const deviceName =
+        Device.modelName || Device.deviceName || "Unknown Device";
+
+      // Initiate Google Sign-In flow
+      await initiateGoogleSignIn(undefined, deviceId, deviceName);
+    } catch (error) {
+      console.error("Google Sign-In initiation error:", error);
+      Alert.alert("Error", "Failed to start Google Sign-In. Please try again.");
+      setIsGoogleSigningIn(false);
     }
   };
 
@@ -162,13 +258,33 @@ export const LoginScreen = () => {
             </Text>
           </TouchableOpacity>
 
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.divider} />
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.googleButton,
+              isGoogleSigningIn && styles.buttonDisabled,
+            ]}
+            onPress={handleGoogleSignIn}
+            disabled={isGoogleSigningIn}
+          >
+            <GoogleIcon width={20} height={20} style={styles.googleIcon} />
+            <Text style={styles.googleButtonText}>
+              {isGoogleSigningIn ? "Signing In..." : "Sign in with Google"}
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={handleForgotPassword}>
             <Text style={styles.forgotPassword}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
+          <Text style={styles.footerText}>Do not have an account? </Text>
           <TouchableOpacity onPress={handleSignUp}>
             <Text style={styles.signUpText}>Sign Up</Text>
           </TouchableOpacity>
@@ -236,6 +352,40 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E0E0E0",
+  },
+  dividerText: {
+    marginHorizontal: 15,
+    color: "#666666",
+    fontSize: 14,
+  },
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  googleIcon: {
+    marginRight: 10,
+  },
+  googleButtonText: {
+    color: "#333333",
     fontSize: 16,
     fontWeight: "600",
   },

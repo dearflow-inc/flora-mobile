@@ -25,9 +25,9 @@ export interface User {
   authUserId: string;
   email: string;
   emailVerified: boolean;
-  paymentPlans: Array<AuthUserPlan>;
-  roles: Array<DearflowRole>;
-  usage: {
+  paymentPlans: AuthUserPlan[];
+  roles: DearflowRole[];
+  usage?: {
     canRun: boolean;
     credits: number;
     usedCredits: number;
@@ -67,8 +67,8 @@ export interface AuthResponse {
   authUserId: string;
   email: string;
   emailVerified: boolean;
-  paymentPlans: Array<AuthUserPlan>;
-  roles: Array<DearflowRole>;
+  paymentPlans: AuthUserPlan[];
+  roles: DearflowRole[];
   authToken: string;
   refreshToken: string;
 }
@@ -77,8 +77,8 @@ export interface RefreshAuthResponse {
   authUserId: string;
   email: string;
   emailVerified: boolean;
-  paymentPlans: Array<AuthUserPlan>;
-  roles: Array<DearflowRole>;
+  paymentPlans: AuthUserPlan[];
+  roles: DearflowRole[];
   authToken: string;
   refreshToken: string;
 }
@@ -87,8 +87,8 @@ export interface VerifyEmailResponse {
   authUserId: string;
   email: string;
   emailVerified: boolean;
-  paymentPlans: Array<AuthUserPlan>;
-  roles: Array<DearflowRole>;
+  paymentPlans: AuthUserPlan[];
+  roles: DearflowRole[];
 }
 
 export interface PasswordResetResponse {

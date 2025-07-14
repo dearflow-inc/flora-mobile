@@ -1,4 +1,3 @@
-import { createApiInstance } from "@/config/api";
 import {
   CompleteUserTaskRequest,
   CreateUserTaskRequest,
@@ -11,6 +10,7 @@ import {
   UserTasksResponse,
   UserTaskStatus,
 } from "@/types/userTask";
+import { createApiInstance } from "@/utils/apiInstance";
 import { AxiosInstance } from "axios";
 
 class UserTaskService {
