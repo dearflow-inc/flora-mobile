@@ -2,6 +2,7 @@ import { CustomAvatar } from "@/components/ui/CustomAvatar";
 import { useContacts } from "@/hooks/useContacts";
 import { useTheme } from "@/hooks/useTheme";
 import { RootState } from "@/store";
+import { removeEmailFromList } from "@/store/slices/emailSlice";
 import { AuthorType, EmailWithoutContent } from "@/types/email";
 import { MaterialIcons } from "@expo/vector-icons";
 import React, { useRef } from "react";
@@ -14,7 +15,7 @@ import {
   View,
 } from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 const { width: screenWidth } = Dimensions.get("window");
 const SWIPE_THRESHOLD = screenWidth * 0.25;
@@ -42,6 +43,7 @@ export const EmailItem: React.FC<EmailItemProps> = ({
   onArchive,
 }) => {
   const { colors } = useTheme();
+  const dispatch = useDispatch();
   const translateX = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
   const backgroundOpacity = useRef(new Animated.Value(0)).current;
@@ -49,6 +51,10 @@ export const EmailItem: React.FC<EmailItemProps> = ({
     (state: RootState) => state.profile.currentProfile
   );
   const { contacts } = useContacts();
+
+  // Get emails from store to detect when this email is removed
+  const emails = useSelector((state: RootState) => state.emails.emails);
+  const isEmailInStore = emails.some((e) => e.id === email.id);
 
   const styles = createStyles(colors);
 
@@ -148,9 +154,13 @@ export const EmailItem: React.FC<EmailItemProps> = ({
       ) {
         if (translationX < 0 && onDelete) {
           // Left swipe - delete
+          // Optimistically remove the email from the store immediately
+          dispatch(removeEmailFromList(email.id));
           onDelete(email.id);
         } else if (translationX > 0 && onArchive) {
           // Right swipe - archive
+          // Optimistically remove the email from the store immediately
+          dispatch(removeEmailFromList(email.id));
           onArchive(email.id);
         }
       }
@@ -172,6 +182,11 @@ export const EmailItem: React.FC<EmailItemProps> = ({
 
     onSwipeEvent(email.id, translationX, velocityX, state);
   };
+
+  // Don't render if the email is no longer in the store
+  if (!isEmailInStore) {
+    return null;
+  }
 
   const senderInfo = getSenderInfo();
 

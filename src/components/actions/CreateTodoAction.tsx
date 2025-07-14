@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useAppDispatch } from "@/hooks/redux";
+import { useTheme } from "@/hooks/useTheme";
 import {
-  View,
-  Text,
+  deleteUserTaskActionAsync,
+  updateUserTaskActionDataAsync,
+} from "@/store/slices/userTaskSlice";
+import { UserTask, UserTaskAction } from "@/types/userTask";
+import { MaterialIcons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Platform,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  Platform,
-  Alert,
+  View,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/useTheme";
-import { useAppDispatch } from "@/hooks/redux";
-import {
-  updateUserTaskActionDataAsync,
-  deleteUserTaskActionAsync,
-} from "@/store/slices/userTaskSlice";
-import { UserTaskAction, UserTask } from "@/types/userTask";
 
 interface CreateTodoActionProps {
   action: UserTaskAction;
@@ -130,6 +130,14 @@ export const CreateTodoAction: React.FC<CreateTodoActionProps> = ({
     };
   }, []);
 
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString();
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -160,62 +168,95 @@ export const CreateTodoAction: React.FC<CreateTodoActionProps> = ({
         <View style={styles.fieldContainer}>
           <Text style={styles.fieldLabel}>Deadline</Text>
           <View style={styles.dateTimeContainer}>
-            <DateTimePicker
-              value={deadline}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-              textColor={Platform.OS === "ios" ? colors.text : undefined}
-              themeVariant={
-                Platform.OS === "ios" ? (isDark ? "dark" : "light") : undefined
-              }
-              positiveButton={
-                Platform.OS === "android"
-                  ? {
-                      label: "OK",
-                      textColor: colors.text,
-                    }
-                  : undefined
-              }
-              negativeButton={
-                Platform.OS === "android"
-                  ? {
-                      label: "Cancel",
-                      textColor: colors.text,
-                    }
-                  : undefined
-              }
-            />
+            <TouchableOpacity
+              style={styles.dateTimeButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <MaterialIcons
+                name="event"
+                size={16}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.dateTimeButtonText}>
+                {formatDate(deadline)}
+              </Text>
+            </TouchableOpacity>
 
-            <DateTimePicker
-              value={deadline}
-              mode="time"
-              display="default"
-              onChange={handleTimeChange}
-              textColor={Platform.OS === "ios" ? colors.text : undefined}
-              themeVariant={
-                Platform.OS === "ios" ? (isDark ? "dark" : "light") : undefined
-              }
-              positiveButton={
-                Platform.OS === "android"
-                  ? {
-                      label: "OK",
-                      textColor: colors.text,
-                    }
-                  : undefined
-              }
-              negativeButton={
-                Platform.OS === "android"
-                  ? {
-                      label: "Cancel",
-                      textColor: colors.text,
-                    }
-                  : undefined
-              }
-            />
+            <TouchableOpacity
+              style={styles.dateTimeButton}
+              onPress={() => setShowTimePicker(true)}
+            >
+              <MaterialIcons
+                name="access-time"
+                size={16}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.dateTimeButtonText}>
+                {formatTime(deadline)}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
+
+      {/* Only render DateTimePicker components when they should be shown */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={deadline}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          textColor={Platform.OS === "ios" ? colors.text : undefined}
+          themeVariant={
+            Platform.OS === "ios" ? (isDark ? "dark" : "light") : undefined
+          }
+          positiveButton={
+            Platform.OS === "android"
+              ? {
+                  label: "OK",
+                  textColor: colors.text,
+                }
+              : undefined
+          }
+          negativeButton={
+            Platform.OS === "android"
+              ? {
+                  label: "Cancel",
+                  textColor: colors.text,
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {showTimePicker && (
+        <DateTimePicker
+          value={deadline}
+          mode="time"
+          display="default"
+          onChange={handleTimeChange}
+          textColor={Platform.OS === "ios" ? colors.text : undefined}
+          themeVariant={
+            Platform.OS === "ios" ? (isDark ? "dark" : "light") : undefined
+          }
+          positiveButton={
+            Platform.OS === "android"
+              ? {
+                  label: "OK",
+                  textColor: colors.text,
+                }
+              : undefined
+          }
+          negativeButton={
+            Platform.OS === "android"
+              ? {
+                  label: "Cancel",
+                  textColor: colors.text,
+                }
+              : undefined
+          }
+        />
+      )}
     </View>
   );
 };
@@ -274,6 +315,21 @@ const createStyles = (colors: any) =>
     dateTimeContainer: {
       flexDirection: "row",
       gap: 8,
+    },
+    dateTimeButton: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 12,
+      gap: 8,
+    },
+    dateTimeButtonText: {
+      fontSize: 14,
+      color: colors.text,
     },
     dateInput: {
       fontSize: 14,

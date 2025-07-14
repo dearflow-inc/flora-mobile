@@ -140,6 +140,9 @@ export const useSwipeHandler = () => {
       const task = userTasks.find((t) => t.id === taskId);
       if (!task) return;
 
+      // Optimistically remove the task from the store immediately
+      dispatch(optimisticallyRemoveUserTask(taskId));
+
       const actionConfig = actionsByUserTaskType[task.type];
       const actionToUse =
         actionConfig.archiveAction || actionConfig.defaultAction || "archive";
@@ -180,6 +183,9 @@ export const useSwipeHandler = () => {
         setSwipedTaskId(null);
       });
     } catch (error) {
+      // If the API call fails, restore the task
+      dispatch(restoreUserTask(taskId));
+
       // Reset animation on error
       const animation = getOrCreateSwipeAnimation(taskId);
       Animated.timing(animation, {

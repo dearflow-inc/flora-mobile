@@ -1,20 +1,19 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { emailService } from "@/services/emailService";
 import {
+  AddLookSessionRequest,
   Email,
   EmailWithoutContent,
-  EmailStatus,
   GetEmailsRequest,
-  UpdateEmailStatusRequest,
   SendEmailRequest,
-  AddLookSessionRequest,
+  UpdateEmailStatusRequest,
 } from "@/types/email";
-import { emailService } from "@/services/emailService";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface EmailState {
-  emails: Array<EmailWithoutContent>;
+  emails: EmailWithoutContent[];
   currentEmail: Email | null;
-  threadEmails: Array<Email>;
-  contactEmails: Array<Email>;
+  threadEmails: Email[];
+  contactEmails: Email[];
   isLoading: boolean;
   isFetching: boolean;
   isUpdating: boolean;
@@ -27,6 +26,8 @@ interface EmailState {
   totalEmails: number;
   currentPage: number;
   hasMore: boolean;
+  // Optimistic updates state
+  removedEmails: EmailWithoutContent[] | null;
 }
 
 const initialState: EmailState = {
@@ -46,11 +47,12 @@ const initialState: EmailState = {
   totalEmails: 0,
   currentPage: 1,
   hasMore: true,
+  removedEmails: null,
 };
 
 // Async thunks
 export const fetchMyEmailsAsync = createAsyncThunk<
-  Array<EmailWithoutContent>,
+  EmailWithoutContent[],
   GetEmailsRequest | undefined,
   { rejectValue: string }
 >("emails/fetchMyEmails", async (params, { rejectWithValue }) => {
@@ -74,7 +76,7 @@ export const fetchEmailByIdAsync = createAsyncThunk<
 });
 
 export const fetchEmailsByThreadIdAsync = createAsyncThunk<
-  Array<Email>,
+  Email[],
   string,
   { rejectValue: string }
 >("emails/fetchEmailsByThreadId", async (threadId, { rejectWithValue }) => {
@@ -86,8 +88,8 @@ export const fetchEmailsByThreadIdAsync = createAsyncThunk<
 });
 
 export const fetchEmailsByIdsAsync = createAsyncThunk<
-  Array<Email>,
-  Array<string>,
+  Email[],
+  string[],
   { rejectValue: string }
 >("emails/fetchEmailsByIds", async (emailIds, { rejectWithValue }) => {
   try {
@@ -113,7 +115,7 @@ export const updateEmailStatusAsync = createAsyncThunk<
 );
 
 export const markEmailAsReadAsync = createAsyncThunk<
-  Array<Email>,
+  Email[],
   string,
   { rejectValue: string }
 >("emails/markEmailAsRead", async (emailId, { rejectWithValue }) => {
@@ -125,7 +127,7 @@ export const markEmailAsReadAsync = createAsyncThunk<
 });
 
 export const deleteEmailAsync = createAsyncThunk<
-  Array<Email>,
+  Email[],
   string,
   { rejectValue: string }
 >("emails/deleteEmail", async (emailId, { rejectWithValue }) => {
@@ -164,7 +166,7 @@ export const addLookSessionAsync = createAsyncThunk<
 );
 
 export const fetchEmailsByContactAsync = createAsyncThunk<
-  Array<Email>,
+  Email[],
   { contactId: string; limit?: number; page?: number },
   { rejectValue: string }
 >(
@@ -232,7 +234,7 @@ export const unspamEmailAsync = createAsyncThunk<
 });
 
 export const archiveEmailAsync = createAsyncThunk<
-  Array<Email>,
+  Email[],
   string,
   { rejectValue: string }
 >("emails/archiveEmail", async (emailId, { rejectWithValue }) => {
@@ -317,27 +319,52 @@ export const emailSlice = createSlice({
     },
     removeEmailFromList: (state, action: PayloadAction<string>) => {
       const emailId = action.payload;
+      const removedEmail = state.emails.find((email) => email.id === emailId);
 
-      // Remove from emails list
-      state.emails = state.emails.filter((email) => email.id !== emailId);
+      if (removedEmail) {
+        // Store the removed email in a temporary state for potential restoration
+        state.removedEmails = state.removedEmails || [];
+        state.removedEmails.push(removedEmail);
 
-      // Clear current email if it's the one being removed
-      if (state.currentEmail?.id === emailId) {
-        state.currentEmail = null;
+        // Remove from emails list
+        state.emails = state.emails.filter((email) => email.id !== emailId);
+
+        // Clear current email if it's the one being removed
+        if (state.currentEmail?.id === emailId) {
+          state.currentEmail = null;
+        }
+
+        // Remove from thread emails
+        state.threadEmails = state.threadEmails.filter(
+          (email) => email.id !== emailId
+        );
+
+        // Remove from contact emails
+        state.contactEmails = state.contactEmails.filter(
+          (email) => email.id !== emailId
+        );
+
+        // Adjust total count
+        state.totalEmails = Math.max(0, state.totalEmails - 1);
       }
-
-      // Remove from thread emails
-      state.threadEmails = state.threadEmails.filter(
-        (email) => email.id !== emailId
-      );
-
-      // Remove from contact emails
-      state.contactEmails = state.contactEmails.filter(
-        (email) => email.id !== emailId
-      );
-
-      // Adjust total count
-      state.totalEmails = Math.max(0, state.totalEmails - 1);
+    },
+    restoreEmail: (state, action: PayloadAction<string>) => {
+      const emailId = action.payload;
+      if (state.removedEmails) {
+        const emailToRestore = state.removedEmails.find(
+          (email) => email.id === emailId
+        );
+        if (emailToRestore) {
+          // Restore to main list
+          state.emails.unshift(emailToRestore);
+          // Remove from removed emails
+          state.removedEmails = state.removedEmails.filter(
+            (email) => email.id !== emailId
+          );
+          // Adjust total count
+          state.totalEmails += 1;
+        }
+      }
     },
   },
   extraReducers: (builder) => {
@@ -351,6 +378,8 @@ export const emailSlice = createSlice({
         state.isLoading = false;
         state.emails = action.payload;
         state.totalEmails = action.payload.length;
+        // Clear any removed emails when refetching
+        state.removedEmails = [];
         state.error = null;
       })
       .addCase(fetchMyEmailsAsync.rejected, (state, action) => {
@@ -456,19 +485,34 @@ export const emailSlice = createSlice({
       })
       .addCase(deleteEmailAsync.fulfilled, (state, action) => {
         state.isDeleting = false;
-        // Update multiple emails that were affected by the delete
-        action.payload.forEach((email) => {
-          const emailIndex = state.emails.findIndex((e) => e.id === email.id);
-          if (emailIndex !== -1) {
-            const { message, ...emailWithoutContent } = email;
-            state.emails[emailIndex] =
-              emailWithoutContent as EmailWithoutContent;
-          }
-        });
+        // Email was already optimistically removed, just clean up removedEmails
+        if (state.removedEmails) {
+          // Remove any emails that were successfully deleted from removedEmails
+          action.payload.forEach((email) => {
+            state.removedEmails =
+              state.removedEmails?.filter(
+                (removedEmail) => removedEmail.id !== email.id
+              ) || null;
+          });
+        }
         state.error = null;
       })
       .addCase(deleteEmailAsync.rejected, (state, action) => {
         state.isDeleting = false;
+        // Restore the email that was optimistically removed
+        if (action.meta?.arg) {
+          const emailId = action.meta.arg as string;
+          const emailToRestore = state.removedEmails?.find(
+            (email) => email.id === emailId
+          );
+          if (emailToRestore) {
+            state.emails.unshift(emailToRestore);
+            state.removedEmails =
+              state.removedEmails?.filter((email) => email.id !== emailId) ||
+              null;
+            state.totalEmails += 1;
+          }
+        }
         state.error = action.payload || "Failed to delete email";
       })
       // Restore Email
@@ -578,19 +622,34 @@ export const emailSlice = createSlice({
       })
       .addCase(archiveEmailAsync.fulfilled, (state, action) => {
         state.isArchiving = false;
-        // Update multiple emails that were affected by the archive
-        action.payload.forEach((email) => {
-          const emailIndex = state.emails.findIndex((e) => e.id === email.id);
-          if (emailIndex !== -1) {
-            const { message, ...emailWithoutContent } = email;
-            state.emails[emailIndex] =
-              emailWithoutContent as EmailWithoutContent;
-          }
-        });
+        // Email was already optimistically removed, just clean up removedEmails
+        if (state.removedEmails) {
+          // Remove any emails that were successfully archived from removedEmails
+          action.payload.forEach((email) => {
+            state.removedEmails =
+              state.removedEmails?.filter(
+                (removedEmail) => removedEmail.id !== email.id
+              ) || null;
+          });
+        }
         state.error = null;
       })
       .addCase(archiveEmailAsync.rejected, (state, action) => {
         state.isArchiving = false;
+        // Restore the email that was optimistically removed
+        if (action.meta?.arg) {
+          const emailId = action.meta.arg as string;
+          const emailToRestore = state.removedEmails?.find(
+            (email) => email.id === emailId
+          );
+          if (emailToRestore) {
+            state.emails.unshift(emailToRestore);
+            state.removedEmails =
+              state.removedEmails?.filter((email) => email.id !== emailId) ||
+              null;
+            state.totalEmails += 1;
+          }
+        }
         state.error = action.payload || "Failed to archive email";
       })
       // Unarchive Email
@@ -619,6 +678,7 @@ export const {
   resetEmails,
   updateEmailFromWebSocket,
   removeEmailFromList,
+  restoreEmail,
 } = emailSlice.actions;
 
 // Selectors

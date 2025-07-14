@@ -1,13 +1,13 @@
-import React, { useRef, useEffect } from "react";
+import { useTheme } from "@/hooks/useTheme";
+import React, { useEffect, useRef } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
+  Animated,
   ScrollView,
   StyleSheet,
-  Animated,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useTheme } from "@/hooks/useTheme";
 
 interface ContextView {
   id: string | null;
@@ -99,7 +99,9 @@ export const ContextFilter: React.FC<ContextFilterProps> = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.contextChipsContainer}
         scrollEnabled={true}
-        nestedScrollEnabled={true}
+        nestedScrollEnabled={false}
+        bounces={false}
+        alwaysBounceHorizontal={false}
       >
         {contextViews.map((item) => {
           const isSelected = selectedContextViewId === item.id;

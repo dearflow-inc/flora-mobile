@@ -19,8 +19,8 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
-
 // Import our new components
 import { AutoSaveIndicator } from "../emails/AutoSaveIndicator";
 import { EmailActionBar } from "../emails/EmailActionBar";
@@ -253,10 +253,8 @@ export const EditReplyEmail: React.FC<EditReplyEmailProps> = ({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        style={[
-          styles.content,
-          { minHeight: height - 260, maxHeight: height - 260 },
-        ]}
+        style={styles.content}
+        contentContainerStyle={{ flexGrow: 1 }}
         scrollEnabled={true}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={true}
@@ -314,24 +312,46 @@ export const EditReplyEmail: React.FC<EditReplyEmailProps> = ({
         <View style={{ height: 150, backgroundColor: colors.background }} />
       </ScrollView>
 
-      {/* Auto-save indicator - positioned at bottom */}
-      <AutoSaveIndicator lastSaved={lastSaved} />
-
-      {/* Action Bar - Modified for reply editing */}
-      <EmailActionBar
-        onAskAI={() => setShowAiModal(true)}
-        onRefresh={handleRefreshContent}
-        onFollowUp={() => setShowFollowUpModal(true)}
-        onAttach={handleAttach}
-        onSend={handleFinishEditing}
-        isAskingAI={isAskingAI}
-        isSending={false}
-        isExecuting={false}
-        hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
-        disabled={!emailData.body.trim()}
-        hideSendIcon
-        sendButtonText="Finish Editing"
-      />
+      {Platform.OS === "ios" ? (
+        <SafeAreaView
+          edges={["bottom"]}
+          style={{ backgroundColor: colors.background }}
+        >
+          <AutoSaveIndicator lastSaved={lastSaved} />
+          <EmailActionBar
+            onAskAI={() => setShowAiModal(true)}
+            onRefresh={handleRefreshContent}
+            onFollowUp={() => setShowFollowUpModal(true)}
+            onAttach={handleAttach}
+            onSend={handleFinishEditing}
+            isAskingAI={isAskingAI}
+            isSending={false}
+            isExecuting={false}
+            hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
+            disabled={!emailData.body.trim()}
+            hideSendIcon
+            sendButtonText="Finish Editing"
+          />
+        </SafeAreaView>
+      ) : (
+        <View style={{ backgroundColor: colors.background }}>
+          <AutoSaveIndicator lastSaved={lastSaved} />
+          <EmailActionBar
+            onAskAI={() => setShowAiModal(true)}
+            onRefresh={handleRefreshContent}
+            onFollowUp={() => setShowFollowUpModal(true)}
+            onAttach={handleAttach}
+            onSend={handleFinishEditing}
+            isAskingAI={isAskingAI}
+            isSending={false}
+            isExecuting={false}
+            hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
+            disabled={!emailData.body.trim()}
+            hideSendIcon
+            sendButtonText="Finish Editing"
+          />
+        </View>
+      )}
 
       {/* Modals */}
       <AIModal

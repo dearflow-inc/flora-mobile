@@ -2,9 +2,10 @@ import { useTheme } from "@/hooks/useTheme";
 import React, { useEffect, useRef, useState } from "react";
 import { Keyboard, StyleSheet, TextInput, View } from "react-native";
 import { RichEditor } from "react-native-pell-rich-editor";
+import FixedRichEditor from "./FixedRichEditor";
 
 interface EmailBodyProps {
-  subject: string;
+  subject?: string;
   body: string;
   onSubjectChange: (text: string) => void;
   onBodyChange: (text: string) => void;
@@ -33,26 +34,30 @@ export const EmailBody: React.FC<EmailBodyProps> = ({
   // Update rich editor content when body prop changes
   useEffect(() => {
     if (!isEditing && richTextRef.current && body !== undefined) {
-      richTextRef.current.setContentHTML(body);
+      richTextRef.current.setContentHTML(body || "");
     }
   }, [body]);
 
   // Create a stable hash for the body content that only changes when body actually changes
   useEffect(() => {
     if (!isEditing) {
-      setBodyHash(body.length + (body ? body.charCodeAt(0) : 0));
+      const bodyStr = body || "";
+      setBodyHash(bodyStr.length + (bodyStr ? bodyStr.charCodeAt(0) : 0));
     }
   }, [body, isEditing]);
 
   const handleTouchStart = (event: any) => {
-    touchStartY.current = event.nativeEvent.pageY;
-    touchStartTime.current = Date.now();
+    if (event?.nativeEvent?.pageY !== undefined) {
+      touchStartY.current = event.nativeEvent.pageY;
+      touchStartTime.current = Date.now();
+    }
   };
 
   const [canOpenKeyboard, setCanOpenKeyboard] = useState(true);
 
   const handleTouchMove = (event: any) => {
     if (touchStartY.current === null || touchStartTime.current === null) return;
+    if (event?.nativeEvent?.pageY === undefined) return;
 
     const currentY = event.nativeEvent.pageY;
     const currentTime = Date.now();
@@ -80,8 +85,17 @@ export const EmailBody: React.FC<EmailBodyProps> = ({
     touchStartTime.current = null;
   };
 
-  const handleRichTextChange = (text: string) => {
-    onBodyChange(text);
+  const handleRichTextChange = (text: any) => {
+    // Ensure text is a string and handle any potential array input
+    if (typeof text === "string") {
+      onBodyChange(text);
+    } else if (Array.isArray(text)) {
+      // If it's an array, join it into a string
+      onBodyChange(text.join(""));
+    } else {
+      // Fallback to empty string if neither string nor array
+      onBodyChange("");
+    }
   };
 
   return (
@@ -101,17 +115,17 @@ export const EmailBody: React.FC<EmailBodyProps> = ({
       <View
         style={[styles.richTextContainer, disabled && styles.inputDisabled]}
       >
-        <RichEditor
+        <FixedRichEditor
           ref={richTextRef}
-          key={`rich-editor-${bodyHash}`}
-          style={[styles.richTextEditor, { height: bodyHeight }]}
-          initialContentHTML={body}
+          key={`rich-editor-${bodyHash || 0}`}
+          style={[styles.richTextEditor, { height: bodyHeight || 100 }]}
+          initialContentHTML={body || ""}
           onChange={handleRichTextChange}
           placeholder="Write your email here..."
-          disabled={disabled || !canOpenKeyboard}
+          disabled={!!disabled || !canOpenKeyboard}
           editorStyle={{
-            backgroundColor: colors.background,
-            color: colors.text,
+            backgroundColor: colors.background || "#ffffff",
+            color: colors.text || "#000000",
             contentCSSText: `
               p { margin: 0; padding: 0; }
               div { margin: 0; padding: 0; }
