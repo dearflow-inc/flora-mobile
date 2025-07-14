@@ -1,25 +1,28 @@
-import React, { useState, useEffect, useRef } from "react";
+import { CustomAvatar } from "@/components/ui/CustomAvatar";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useTheme } from "@/hooks/useTheme";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
+  fetchEmailsByIdsAsync,
+  selectEmailById,
+} from "@/store/slices/emailSlice";
+import {
+  deleteUserTaskActionAsync,
+  updateUserTaskActionDataAsync,
+} from "@/store/slices/userTaskSlice";
+import { UserTask, UserTaskAction, UserTaskType } from "@/types/userTask";
+import { MaterialIcons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Alert,
   Animated,
   Dimensions,
-  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/useTheme";
-import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import {
-  updateUserTaskActionDataAsync,
-  deleteUserTaskActionAsync,
-} from "@/store/slices/userTaskSlice";
-import { selectEmailById } from "@/store/slices/emailSlice";
-import { UserTaskAction, UserTask, UserTaskType } from "@/types/userTask";
-import { CustomAvatar } from "@/components/ui/CustomAvatar";
 
 const { width: screenWidth } = Dimensions.get("window");
 const SWIPE_THRESHOLD = screenWidth * 0.25;
@@ -55,6 +58,19 @@ export const EmailCleanUpAction: React.FC<EmailCleanUpActionProps> = ({
     }
     return [];
   });
+
+  // Fetch all emails by IDs when component mounts
+  useEffect(() => {
+    if (action.data?.emailIds && action.data.emailIds.length > 0) {
+      const emailIdsToFetch = action.data.emailIds
+        .filter((email: any) => email.actions?.length === 0)
+        .map((item: any) => item.emailId);
+
+      if (emailIdsToFetch.length > 0) {
+        dispatch(fetchEmailsByIdsAsync(emailIdsToFetch));
+      }
+    }
+  }, [action.data?.emailIds, dispatch]);
 
   const handleMarkImportant = (emailId: string) => {
     const updatedEmails = emails.map((email) =>

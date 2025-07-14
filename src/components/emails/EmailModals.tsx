@@ -149,6 +149,71 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
   );
 };
 
+interface SnoozeModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSelectTime: (snoozeFor: number) => void;
+}
+
+export const SnoozeModal: React.FC<SnoozeModalProps> = ({
+  visible,
+  onClose,
+  onSelectTime,
+}) => {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
+  const snoozeOptions = [
+    { title: "In 30 minutes", value: 1000 * 60 * 30, icon: "schedule" },
+    { title: "In 1 hour", value: 1000 * 60 * 60, icon: "schedule" },
+    { title: "In 3 hours", value: 1000 * 60 * 60 * 3, icon: "schedule" },
+    { title: "In 8 hours", value: 1000 * 60 * 60 * 8, icon: "schedule" },
+    { title: "In 1 day", value: 1000 * 60 * 60 * 24, icon: "schedule" },
+    { title: "In 3 days", value: 1000 * 60 * 60 * 24 * 3, icon: "schedule" },
+    { title: "In 1 week", value: 1000 * 60 * 60 * 24 * 7, icon: "schedule" },
+  ];
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Snooze Task</Text>
+            <TouchableOpacity onPress={onClose}>
+              <MaterialIcons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.followUpOptions}>
+            {snoozeOptions.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.followUpOption}
+                onPress={() => {
+                  onSelectTime(option.value);
+                  onClose();
+                }}
+              >
+                <MaterialIcons
+                  name={option.icon as any}
+                  size={20}
+                  color={colors.primary}
+                />
+                <Text style={styles.followUpOptionText}>{option.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 const createStyles = (colors: any) =>
   StyleSheet.create({
     modalOverlay: {

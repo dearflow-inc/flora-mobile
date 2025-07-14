@@ -1,4 +1,5 @@
 import { EmailContextView } from "@/components/context/EmailContextView";
+import { SnoozeModal } from "@/components/emails/EmailModals";
 import { useTheme } from "@/hooks/useTheme";
 import { AppDispatch, RootState } from "@/store";
 import {
@@ -77,6 +78,7 @@ export const UserTaskScreen = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSuggestionsExpanded, setIsSuggestionsExpanded] = useState(false);
   const [isMenuModalVisible, setIsMenuModalVisible] = useState(false);
+  const [isSnoozeModalVisible, setIsSnoozeModalVisible] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [contextData, setContextData] = useState<{
     emails?: Email[];
@@ -242,15 +244,19 @@ export const UserTaskScreen = () => {
     ]);
   };
 
-  const handleMarkUnread = async () => {
+  const handleMarkUnread = () => {
+    if (!userTask) return;
+    setIsSnoozeModalVisible(true);
+  };
+
+  const handleSnoozeTask = async (snoozeFor: number) => {
     if (!userTask) return;
 
     try {
-      // Snooze the task for 1 hour (3600000 ms)
       await dispatch(
         snoozeUserTaskAsync({
           userTaskId: userTask.id,
-          msTillReactivate: 3600000, // 1 hour
+          msTillReactivate: snoozeFor,
         })
       ).unwrap();
 
@@ -899,6 +905,11 @@ export const UserTaskScreen = () => {
         </View>
       )}
       {isMenuModalVisible && renderMenuModal()}
+      <SnoozeModal
+        visible={isSnoozeModalVisible}
+        onClose={() => setIsSnoozeModalVisible(false)}
+        onSelectTime={handleSnoozeTask}
+      />
     </SafeAreaView>
   );
 };
