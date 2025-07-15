@@ -158,7 +158,19 @@ export const LoginScreen = () => {
 
       // Navigation will be handled by the AppNavigator based on auth state
     } catch (error) {
-      Alert.alert("Login Failed", error as string);
+      console.error("Login error:", error);
+      // Handle different types of errors
+      let errorMessage = "Login failed. Please try again.";
+
+      if (typeof error === "string") {
+        errorMessage = error;
+      } else if (error && typeof error === "object" && "message" in error) {
+        errorMessage = error.message as string;
+      } else if (error && typeof error === "object" && "toString" in error) {
+        errorMessage = error.toString();
+      }
+
+      Alert.alert("Login Failed", errorMessage);
     }
   };
 

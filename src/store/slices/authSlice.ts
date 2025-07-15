@@ -46,7 +46,7 @@ export const signInAsync = createAsyncThunk<
 
     return response;
   } catch (error: any) {
-    throw error;
+    return rejectWithValue(error.message || "Sign in failed");
   }
 });
 
