@@ -327,6 +327,8 @@ class NotificationService {
           const notificationType =
             rawData?.action as SendMobileNotificationAction;
 
+          console.log(rawData, notificationType);
+
           const data: {
             userTaskId?: string;
             chatMessageId?: string;
@@ -335,6 +337,7 @@ class NotificationService {
 
           switch (notificationType) {
             case SendMobileNotificationAction.USER_TASK_CREATED:
+              console.log("User task created");
               if (this.navigation) {
                 this.navigation.navigate("UserTaskDetail", {
                   userTaskId: data.userTaskId,

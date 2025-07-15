@@ -1,5 +1,4 @@
 import { ChatView } from "@/components/ChatView";
-import { WebSocketStatusIndicator } from "@/components/WebSocketStatusIndicator";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -66,8 +65,6 @@ export const OnboardingChatScreen = () => {
           Flora has learned about your inbox but needs a little more information
           before we start.
         </Text>
-        {/* Add WebSocket status indicator for debugging */}
-        <WebSocketStatusIndicator showDetails={true} />
       </View>
 
       <ChatView
