@@ -92,7 +92,7 @@ export default {
       // Environment-specific configurations
       DEEP_LINK_SCHEME: IS_DEV
         ? "exp://192.168.1.180:8081/--"
-        : "ai.dearflow.email://",
+        : "ai.dearflow.email:/",
       API_BASE_URL: IS_PRODUCTION
         ? "https://api.dearflow.ai" // Replace with your production API URL
         : IS_PREVIEW
