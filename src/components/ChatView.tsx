@@ -1,7 +1,6 @@
 import { ChatMessageAttachment } from "@/components/ChatMessageAttachment";
 import { SuggestedAction } from "@/components/SuggestedAction";
 import { AvailableTools, ToolCallDisplay } from "@/components/ToolCallDisplay";
-import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -23,6 +22,7 @@ import {
   Clipboard,
   FlatList,
   Keyboard,
+  KeyboardAvoidingView,
   Linking,
   Platform,
   StyleSheet,
@@ -32,6 +32,7 @@ import {
   View,
 } from "react-native";
 import Markdown from "react-native-markdown-display";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ChatViewProps {
   chatId?: string;
@@ -65,8 +66,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
     aiIsWorking,
     error,
   } = useAppSelector((state) => state.chat);
-  const { connected: wsConnected, emitMessage } = useWebSocket();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [inputText, setInputText] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -82,7 +83,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
     [currentChat?.state]
   );
 
-  const styles = createStyles(colors, isChatClosed);
+  const styles = createStyles(colors, isChatClosed, insets);
 
   useEffect(() => {
     // Initialize chat when component mounts
@@ -572,7 +573,11 @@ export const ChatView: React.FC<ChatViewProps> = ({
   }
 
   return (
-    <View style={styles.chatContainer}>
+    <KeyboardAvoidingView
+      style={styles.chatContainer}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
       {isLoadingMessages ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
@@ -717,11 +722,11 @@ export const ChatView: React.FC<ChatViewProps> = ({
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
-const createStyles = (colors: any, isChatClosed: boolean) =>
+const createStyles = (colors: any, isChatClosed: boolean, insets: any) =>
   StyleSheet.create({
     chatContainer: {
       flex: 1,
@@ -743,6 +748,7 @@ const createStyles = (colors: any, isChatClosed: boolean) =>
     },
     messagesContainer: {
       padding: 16,
+      paddingBottom: 32, // Add extra bottom padding for better spacing from input
     },
     messageContainer: {
       maxWidth: "80%",
@@ -840,7 +846,9 @@ const createStyles = (colors: any, isChatClosed: boolean) =>
     },
     pullIndicator: {
       position: "absolute",
-      bottom: isChatClosed ? 80 : 20, // Position above input container
+      bottom: isChatClosed
+        ? 80 + Math.max(0, insets.bottom - 30)
+        : 60 + Math.max(0, insets.bottom - 30), // Normal positioning
       left: 0,
       right: 0,
       alignItems: "center",
@@ -873,11 +881,12 @@ const createStyles = (colors: any, isChatClosed: boolean) =>
       flexDirection: "row",
       alignItems: "flex-end",
       padding: 8,
+      paddingBottom: 8 + Math.max(0, insets.bottom - 30), // Normal bottom padding when keyboard is closed
       backgroundColor: colors.surface,
       borderTopWidth: 1,
       borderTopColor: colors.border,
       minHeight: 44,
-      marginBottom: Platform.OS === "ios" ? -35 : -25,
+      // Remove negative marginBottom to fix positioning issues
     },
     textInput: {
       flex: 1,
@@ -905,6 +914,7 @@ const createStyles = (colors: any, isChatClosed: boolean) =>
       alignItems: "center",
       justifyContent: "center",
       padding: 16,
+      paddingBottom: 16 + Math.max(0, insets.bottom - 30), // Normal bottom padding when keyboard is closed
       backgroundColor: colors.surface,
       borderTopWidth: 1,
       borderTopColor: colors.border,

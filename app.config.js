@@ -91,7 +91,7 @@ export default {
       AZURE_TENANT_ID: "87017db8-66f4-4375-96c9-dd30790663b8",
       // Environment-specific configurations
       DEEP_LINK_SCHEME: IS_DEV
-        ? "exp://localhost:8081/--"
+        ? "exp://192.168.1.180:8081/--"
         : "ai.dearflow.email://",
       API_BASE_URL: IS_PRODUCTION
         ? "https://api.dearflow.ai" // Replace with your production API URL

@@ -1,7 +1,9 @@
+import { FloatingActionButton } from "@/components/ui";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useTheme } from "@/hooks/useTheme";
 import {
   clearError,
+  createTodoAsync,
   fetchTodosAsync,
   updateTodoStateAsync,
 } from "@/store/slices/todoSlice";
@@ -93,6 +95,20 @@ export const TodosScreen = () => {
       ).unwrap();
     } catch (error) {
       console.error("Failed to update todo state:", error);
+    }
+  };
+
+  const handleCreateTodo = async () => {
+    try {
+      const todo = await dispatch(
+        createTodoAsync({
+          title: "New Todo",
+        })
+      ).unwrap();
+
+      navigation.navigate("TodoDetail", { todoId: todo.id });
+    } catch (error) {
+      Alert.alert("Error", "Failed to create todo. Please try again.");
     }
   };
 
@@ -237,6 +253,12 @@ export const TodosScreen = () => {
           }
         />
       )}
+
+      <FloatingActionButton
+        onPress={handleCreateTodo}
+        icon="add"
+        text="Add Todo"
+      />
     </SafeAreaView>
   );
 };

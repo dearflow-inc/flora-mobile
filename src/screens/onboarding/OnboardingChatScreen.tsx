@@ -60,7 +60,7 @@ export const OnboardingChatScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <Text style={styles.subtitle}>
           Flora has learned about your inbox but needs a little more information
@@ -88,7 +88,7 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      marginBottom: 60,
+      backgroundColor: colors.background,
     },
     header: {
       alignItems: "center",

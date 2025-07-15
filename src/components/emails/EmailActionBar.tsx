@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface EmailActionBarProps {
   onAskAI: () => void;
@@ -39,7 +40,8 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
   sendButtonText = "Send",
 }) => {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colors, insets);
 
   const isLoading = isAskingAI || isSending || isExecuting;
   const isLoadingOrDisabled =
@@ -123,13 +125,14 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
   );
 };
 
-const createStyles = (colors: any) =>
+const createStyles = (colors: any, insets: any) =>
   StyleSheet.create({
     container: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       padding: 16,
+      paddingBottom: 16 + Math.max(0, insets.bottom - 20), // Account for safe area
       backgroundColor: colors.surface,
       borderTopWidth: 1,
       borderTopColor: colors.border,

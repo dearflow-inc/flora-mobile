@@ -15,6 +15,7 @@ import {
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,7 +23,6 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 
 // Import our new components
@@ -70,6 +70,7 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
   const [showAiModal, setShowAiModal] = useState(true);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   // Email input states
   const [toInputValue, setToInputValue] = useState("");
@@ -87,7 +88,28 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
     (state: RootState) => state.toolExecutions
   );
 
-  const styles = createStyles(colors);
+  const styles = createStyles(colors, isKeyboardVisible);
+
+  // Keyboard listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setIsKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
 
   // Load existing data
   useEffect(() => {
@@ -280,87 +302,73 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ flexGrow: 1 }}
-        scrollEnabled={true}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled={true}
-      >
-        {/* Email Recipients */}
-        <EmailField
-          label="To"
-          recipients={emailData.to}
-          inputValue={toInputValue}
-          onInputChange={(value) => {
-            setToInputValue(value);
-            notifyChange();
-          }}
-          onAddRecipient={(recipient) => addEmail("to", recipient)}
-          onRemoveRecipient={(id) => removeEmail("to", id)}
-          onSelectContact={() => handleSelectContact("to")}
-          placeholder="Type..."
-          showCcBcc={true}
-          isDropdownOpen={isDropdownOpen}
-          ccRecipients={emailData.cc}
-          bccRecipients={emailData.bcc}
-          ccInputValue={ccInputValue}
-          bccInputValue={bccInputValue}
-          onCcInputChange={(value) => {
-            setCcInputValue(value);
-            notifyChange();
-          }}
-          onBccInputChange={(value) => {
-            setBccInputValue(value);
-            notifyChange();
-          }}
-          onAddCcRecipient={(recipient) => addEmail("cc", recipient)}
-          onAddBccRecipient={(recipient) => addEmail("bcc", recipient)}
-          onRemoveCcRecipient={(id) => removeEmail("cc", id)}
-          onRemoveBccRecipient={(id) => removeEmail("bcc", id)}
-          onDropdownOpen={setIsDropdownOpen}
-        />
-
-        {/* Email Body */}
-        <EmailBody
-          subject={emailData.subject}
-          body={emailData.body}
-          onSubjectChange={(text) => updateEmailData({ subject: text })}
-          onBodyChange={(text) => updateEmailData({ body: text })}
-        />
-
-        {/* Follow-up Settings */}
-        {emailData.followUpSettings?.followUpRequired && (
-          <FollowUpIndicator
-            followUpAt={emailData.followUpSettings.followUpAt}
-            onRemove={handleRemoveFollowUp}
-          />
-        )}
-        <View style={{ height: 150, backgroundColor: colors.background }} />
-      </ScrollView>
-
-      {Platform.OS === "ios" ? (
-        <SafeAreaView
-          edges={["bottom"]}
-          style={{ backgroundColor: colors.background }}
+      <View style={styles.content}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          scrollEnabled={true}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
+          keyboardShouldPersistTaps="handled"
         >
-          <AutoSaveIndicator lastSaved={lastSaved} />
-          <EmailActionBar
-            onAskAI={() => setShowAiModal(true)}
-            onRefresh={handleRefreshContent}
-            onFollowUp={() => setShowFollowUpModal(true)}
-            onAttach={handleAttach}
-            onSend={handleSendClick}
-            isAskingAI={isAskingAI}
-            isSending={isSending}
-            isExecuting={isExecuting}
-            hasFollowUp={!!emailData.followUpSettings?.followUpRequired}
-            disabled={isSendDisabled}
+          {/* Email Recipients */}
+          <EmailField
+            label="To"
+            recipients={emailData.to}
+            inputValue={toInputValue}
+            onInputChange={(value) => {
+              setToInputValue(value);
+              notifyChange();
+            }}
+            onAddRecipient={(recipient) => addEmail("to", recipient)}
+            onRemoveRecipient={(id) => removeEmail("to", id)}
+            onSelectContact={() => handleSelectContact("to")}
+            placeholder="Type..."
+            showCcBcc={true}
+            isDropdownOpen={isDropdownOpen}
+            ccRecipients={emailData.cc}
+            bccRecipients={emailData.bcc}
+            ccInputValue={ccInputValue}
+            bccInputValue={bccInputValue}
+            onCcInputChange={(value) => {
+              setCcInputValue(value);
+              notifyChange();
+            }}
+            onBccInputChange={(value) => {
+              setBccInputValue(value);
+              notifyChange();
+            }}
+            onAddCcRecipient={(recipient) => addEmail("cc", recipient)}
+            onAddBccRecipient={(recipient) => addEmail("bcc", recipient)}
+            onRemoveCcRecipient={(id) => removeEmail("cc", id)}
+            onRemoveBccRecipient={(id) => removeEmail("bcc", id)}
+            onDropdownOpen={setIsDropdownOpen}
           />
-        </SafeAreaView>
-      ) : (
-        <View style={{ backgroundColor: colors.background, paddingBottom: 20 }}>
+
+          {/* Email Body */}
+          <EmailBody
+            subject={emailData.subject}
+            body={emailData.body}
+            onSubjectChange={(text) => updateEmailData({ subject: text })}
+            onBodyChange={(text) => updateEmailData({ body: text })}
+          />
+
+          {/* Follow-up Settings */}
+          {emailData.followUpSettings?.followUpRequired && (
+            <FollowUpIndicator
+              followUpAt={emailData.followUpSettings.followUpAt}
+              onRemove={handleRemoveFollowUp}
+            />
+          )}
+
+          {/* Bottom spacing to ensure content doesn't get hidden behind action bar */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+
+        {/* Action Bar - Now inside KeyboardAvoidingView */}
+        <View style={styles.actionBarContainer}>
           <AutoSaveIndicator lastSaved={lastSaved} />
           <EmailActionBar
             onAskAI={() => setShowAiModal(true)}
@@ -375,7 +383,7 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
             disabled={isSendDisabled}
           />
         </View>
-      )}
+      </View>
 
       {/* Modals */}
       <AIModal
@@ -396,7 +404,7 @@ export const ComposeEmail: React.FC<ComposeEmailProps> = ({
   );
 };
 
-const createStyles = (colors: any) =>
+const createStyles = (colors: any, isKeyboardVisible: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -404,5 +412,19 @@ const createStyles = (colors: any) =>
     },
     content: {
       flex: 1,
+      display: "flex",
+      flexDirection: "column",
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    bottomSpacing: {
+      height: isKeyboardVisible ? 10 : 20, // Less spacing when keyboard is visible
+    },
+    actionBarContainer: {
+      backgroundColor: colors.background,
     },
   });

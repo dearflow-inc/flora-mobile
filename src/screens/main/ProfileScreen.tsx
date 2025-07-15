@@ -375,7 +375,7 @@ export const ProfileScreen = () => {
   }
 
   return (
-    <SafeAreaView edges={["top"]}>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <ScrollView
         style={styles.container}
         refreshControl={
@@ -705,6 +705,7 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
+      backgroundColor: colors.background,
     },
     container: {
       flex: 1,

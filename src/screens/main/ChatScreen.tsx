@@ -10,7 +10,15 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export const ChatScreen = () => {
@@ -21,8 +29,25 @@ export const ChatScreen = () => {
 
   const [isMenuModalVisible, setIsMenuModalVisible] = useState(false);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ top: 0, right: 0 });
 
   const styles = createStyles(colors);
+
+  const calculateModalPosition = () => {
+    // Account for status bar height and platform differences
+    const statusBarHeight = StatusBar.currentHeight || 0;
+    const topOffset = Platform.OS === "ios" ? 120 : 40; // Reduced Android offset
+
+    setModalPosition({
+      top: statusBarHeight + topOffset,
+      right: 16,
+    });
+  };
+
+  const handleMenuPress = () => {
+    calculateModalPosition();
+    setIsMenuModalVisible(true);
+  };
 
   const handleClearChat = async () => {
     if (!currentProfile) {
@@ -48,6 +73,7 @@ export const ChatScreen = () => {
           aiInitConversation: true,
         })
       ).unwrap();
+      setIsMenuModalVisible(false);
     } catch (error) {
       console.error("Failed to clear chat and create new:", error);
     }
@@ -82,7 +108,7 @@ export const ChatScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => setIsMenuModalVisible(true)}
+            onPress={handleMenuPress}
           >
             <MaterialIcons
               name="more-vert"
@@ -118,7 +144,12 @@ export const ChatScreen = () => {
           activeOpacity={1}
           onPress={() => setIsMenuModalVisible(false)}
         >
-          <View style={styles.modalContent}>
+          <View
+            style={[
+              styles.modalContent,
+              { top: modalPosition.top, right: modalPosition.right },
+            ]}
+          >
             <TouchableOpacity style={styles.menuItem} onPress={handleClearChat}>
               <MaterialIcons
                 name="clear"
@@ -206,12 +237,9 @@ const createStyles = (colors: any) =>
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
-      justifyContent: "flex-start",
-      alignItems: "flex-end",
-      paddingTop: 100,
-      paddingRight: 20,
     },
     modalContent: {
+      position: "absolute",
       backgroundColor: colors.surface,
       borderRadius: 8,
       shadowColor: "#000",
@@ -222,7 +250,8 @@ const createStyles = (colors: any) =>
       shadowOpacity: 0.25,
       shadowRadius: 3.84,
       elevation: 5,
-      minWidth: 150,
+      minWidth: 160,
+      maxWidth: 200,
     },
     menuOption: {
       flexDirection: "row",

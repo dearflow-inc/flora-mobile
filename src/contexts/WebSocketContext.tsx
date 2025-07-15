@@ -1,5 +1,6 @@
 import { API_CONFIG } from "@/config/api";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { secureStorage } from "@/services/secureStorage";
 import {
   Chat,
   ChatMessage,
@@ -132,6 +133,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const { isAuthenticated, authToken, refreshToken } = useAppSelector(
     (state) => state.auth
   );
+  const { currentProfile, hasProfileBeenFetched } = useAppSelector(
+    (state) => state.profile
+  );
   const [state, localDispatch] = useReducer(reducer, initialState);
   const connectionRef = useRef<Socket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -165,12 +169,25 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       return;
     }
 
+    // During onboarding, wait for profile to be fetched before establishing WebSocket
+    if (
+      currentProfile?.onboarding !== undefined &&
+      currentProfile.onboarding < 3 &&
+      !hasProfileBeenFetched
+    ) {
+      console.log(
+        "WebSocket: Waiting for profile to be fetched during onboarding",
+        { onboarding: currentProfile.onboarding, hasProfileBeenFetched }
+      );
+      return;
+    }
+
     if (state.connected || state.isConnecting) {
       console.log("WebSocket: Already connected or connecting");
       return;
     }
 
-    console.log("Connecting to WebSocket...");
+    console.log("WebSocket: Starting connection...");
     localDispatch({ type: "SET_CONNECTING", payload: true });
 
     const connection = io(`${API_CONFIG.API_BASE_URL}/primary-gateway`, {
@@ -187,9 +204,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     connectionRef.current = connection;
 
-    connection.on("connect", () => {
-      console.log("Connected to WebSocket");
-      connection.emit("heyo-fucker");
+    connection.on("connect", async () => {
+      console.log("WebSocket: Successfully connected");
+      connection.emit("heyo-fucker", {
+        deviceId: await secureStorage.getItem("device_id"),
+      });
       localDispatch({
         type: "SET_CONNECTION",
         payload: {
@@ -202,7 +221,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     });
 
     connection.on("disconnect", (reason) => {
-      console.log("Disconnected from WebSocket:", reason);
+      console.log("WebSocket: Disconnected", { reason });
       localDispatch({
         type: "SET_CONNECTION",
         payload: {
@@ -214,7 +233,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
       // Auto-reconnect if it wasn't a manual disconnect
       if (reason !== "io client disconnect" && isAuthenticated) {
-        console.log("Attempting to reconnect...");
+        console.log("WebSocket: Attempting to reconnect...");
         localDispatch({ type: "INCREMENT_ATTEMPTS" });
 
         // Exponential backoff for reconnection
@@ -224,6 +243,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         );
         reconnectTimeoutRef.current = setTimeout(() => {
           if (isAuthenticated && authToken && refreshToken) {
+            console.log("WebSocket: Retrying connection after delay");
             localDispatch({ type: "SET_CONNECTING", payload: true });
             connection.connect();
           }
@@ -232,7 +252,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     });
 
     connection.on("connect_error", (error) => {
-      console.error("WebSocket connection error:", error);
+      console.error("WebSocket: Connection error", error);
       localDispatch({
         type: "SET_CONNECTION",
         payload: {
@@ -247,7 +267,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     return () => {
       cleanupConnection();
     };
-  }, [isAuthenticated, authToken, refreshToken]);
+  }, [
+    isAuthenticated,
+    authToken,
+    refreshToken,
+    currentProfile,
+    hasProfileBeenFetched,
+  ]);
 
   // Handle app state changes (foreground/background)
   useEffect(() => {
