@@ -5,10 +5,26 @@ class SecureStorage {
 
   async setItem(key: string, value: string): Promise<void> {
     try {
+      // Validate inputs
+      if (!key || typeof key !== "string") {
+        throw new Error("Invalid key provided to secureStorage.setItem");
+      }
+
+      if (value === null || value === undefined) {
+        throw new Error(
+          "Cannot store null or undefined value in secureStorage"
+        );
+      }
+
+      if (typeof value !== "string") {
+        value = String(value);
+      }
+
       await SecureStore.setItemAsync(`${this.service}_${key}`, value);
     } catch (error) {
       console.error("SecureStorage setItem error:", error);
-      throw error;
+      // Don't throw the error to prevent app crashes, just log it
+      console.warn(`Failed to store key "${key}" in secure storage:`, error);
     }
   }
 
@@ -18,6 +34,7 @@ class SecureStorage {
       return value;
     } catch (error) {
       console.error("SecureStorage getItem error:", error);
+      // Return null instead of throwing to prevent crashes
       return null;
     }
   }

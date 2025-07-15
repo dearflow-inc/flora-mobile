@@ -55,9 +55,9 @@ export const ConnectInboxModal = ({
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
       // Check for both custom scheme and Expo Go scheme
-      const isOAuthCallback =
-        event.url.includes(`${OAUTH_CONFIG.DEEP_LINK_SCHEME}/oauth/callback`) ||
-        event.url.includes(`oauth/callback`);
+      const isOAuthCallback = event.url.includes(
+        `${OAUTH_CONFIG.DEEP_LINK_SCHEME}/oauth/callback`
+      );
 
       if (isOAuthCallback) {
         try {
