@@ -1,5 +1,6 @@
 const IS_DEV = process.env.NODE_ENV === "development";
 const IS_PREVIEW = process.env.EAS_BUILD_PROFILE === "preview";
+const IS_TESTFLIGHT = process.env.EAS_BUILD_PROFILE === "testflight";
 const IS_PRODUCTION = process.env.EAS_BUILD_PROFILE === "production";
 
 export default {
@@ -74,13 +75,23 @@ export default {
           defaultChannel: "default",
         },
       ],
+      [
+        "expo-apple-authentication",
+        {
+          // Additional Apple Authentication configuration
+          serviceId:
+            IS_TESTFLIGHT || IS_PRODUCTION
+              ? "ai.dearflow.email"
+              : "host.exp.Exponent",
+        },
+      ],
     ],
     extra: {
       ENVIRONMENT: IS_PRODUCTION
         ? "production"
-        : IS_PREVIEW
-        ? "preview"
-        : "local",
+        : IS_TESTFLIGHT
+        ? "testflight"
+        : "preview",
       GOOGLE_SIGN_IN_CLIENT_ID: IS_PRODUCTION
         ? "903375841365-2029qetav3iueqpjk3ek3rlln1s7118a.apps.googleusercontent.com"
         : "903375841365-tfi0rdplmk9p9q14me11gev9hkals65t.apps.googleusercontent.com",
@@ -89,15 +100,18 @@ export default {
         : "903375841365-dte3punlg82gaj90mjjhpegfo3fve82h.apps.googleusercontent.com",
       AZURE_CLIENT_ID: "b810117e-53b7-4b7e-a27a-c7e1e77a3a37",
       AZURE_TENANT_ID: "87017db8-66f4-4375-96c9-dd30790663b8",
+      // Apple Sign-In configuration
+      APPLE_SERVICE_ID: "ai.dearflow.email",
       // Environment-specific configurations
-      DEEP_LINK_SCHEME: IS_DEV
-        ? "exp://192.168.1.180:8081/--"
-        : "ai.dearflow.email:/",
+      DEEP_LINK_SCHEME:
+        IS_DEV && !IS_PREVIEW
+          ? "exp://10.0.0.46:8081/--"
+          : "ai.dearflow.email:/",
       API_BASE_URL: IS_PRODUCTION
         ? "https://api.dearflow.ai" // Replace with your production API URL
-        : IS_PREVIEW
+        : IS_TESTFLIGHT
         ? "https://api.beta.dearflow.ai" // Replace with your staging API URL
-        : "http://192.168.1.180:4000", // Replace with your computer's local IP address
+        : "http://10.0.0.46:4000", // Replace with your computer's local IP address
       eas: {
         projectId: "122b3dc0-2f1d-4851-acc7-9beed4d4a0a5",
       },

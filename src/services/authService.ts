@@ -77,6 +77,35 @@ class AuthService {
     }
   }
 
+  async appleSignIn(
+    code: string,
+    id_token: string,
+    state: string,
+    user: {
+      name: string;
+      email: string;
+    },
+    clientId?: string
+  ): Promise<AuthResponse> {
+    try {
+      const response = await this.api.post("/authentication/sign-in/apple", {
+        code,
+        id_token,
+        state,
+        user: JSON.stringify(user),
+        clientId,
+      });
+
+      if (response.data.error) {
+        throw new Error(response.data.message || "Apple sign in failed");
+      }
+
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Apple sign in failed");
+    }
+  }
+
   async signOut(): Promise<{ success: boolean }> {
     try {
       const response = await this.api.get("/authentication/sign-out");

@@ -28,6 +28,9 @@ export const OAUTH_CONFIG = {
   // Azure OAuth
   AZURE_CLIENT_ID: Constants.expoConfig?.extra?.AZURE_CLIENT_ID,
 
+  // Apple Sign-In
+  APPLE_SERVICE_ID: Constants.expoConfig?.extra?.APPLE_SERVICE_ID,
+
   // Deep Link Scheme
   DEEP_LINK_SCHEME: Constants.expoConfig?.extra?.DEEP_LINK_SCHEME,
 

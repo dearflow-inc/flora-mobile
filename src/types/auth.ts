@@ -57,6 +57,18 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface AppleSignInCredentials {
+  identityToken: string;
+  authorizationCode: string;
+  user: string | null;
+  email: string | null;
+  fullName?: {
+    givenName?: string;
+    familyName?: string;
+  } | null;
+  clientId?: string;
+}
+
 export interface RegisterCredentials {
   email: string;
   password: string;

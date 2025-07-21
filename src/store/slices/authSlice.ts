@@ -1,3 +1,4 @@
+import { OAUTH_CONFIG } from "@/config/api";
 import { authService } from "@/services/authService";
 import { contactService } from "@/services/contactService";
 import { emailService } from "@/services/emailService";
@@ -9,6 +10,7 @@ import { todoService } from "@/services/todoService";
 import { toolExecutionService } from "@/services/toolExecutionService";
 import { userTaskService } from "@/services/userTaskService";
 import {
+  AppleSignInCredentials,
   AuthResponse,
   AuthState,
   AuthUserUsage,
@@ -72,6 +74,40 @@ export const googleSignInAsync = createAsyncThunk<
     };
   } catch (error: any) {
     return rejectWithValue(error.message || "Google sign in failed");
+  }
+});
+
+export const appleSignInAsync = createAsyncThunk<
+  AuthResponse,
+  AppleSignInCredentials,
+  { rejectValue: string }
+>("auth/appleSignIn", async (credentials, { rejectWithValue }) => {
+  try {
+    // Prepare user data for the API call
+    const userData = {
+      name: credentials.fullName
+        ? `${credentials.fullName.givenName || ""} ${
+            credentials.fullName.familyName || ""
+          }`.trim()
+        : "",
+      email: credentials.email || "",
+    };
+
+    const response = await authService.appleSignIn(
+      credentials.authorizationCode,
+      credentials.identityToken,
+      `redirect=${OAUTH_CONFIG.DEEP_LINK_SCHEME}/oauth/signin-callback`,
+      userData,
+      credentials.clientId
+    );
+
+    // Store tokens securely
+    await secureStorage.setItem("auth_token", response.authToken);
+    await secureStorage.setItem("refresh_token", response.refreshToken);
+
+    return response;
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Apple sign in failed");
   }
 });
 
@@ -378,6 +414,73 @@ export const authSlice = createSlice({
       .addCase(googleSignInAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || "Google sign in failed";
+      })
+      // Apple Sign In
+      .addCase(appleSignInAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(appleSignInAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = {
+          authUserId: action.payload.authUserId,
+          email: action.payload.email,
+          emailVerified: action.payload.emailVerified,
+          paymentPlans: action.payload.paymentPlans,
+          roles: action.payload.roles,
+          usage: {
+            canRun: false,
+            credits: 0,
+            usedCredits: 0,
+            storageUsed: 0,
+            storageAvailable: 50,
+          },
+        };
+        state.authToken = action.payload.authToken;
+        state.refreshToken = action.payload.refreshToken;
+        state.isAuthenticated = true;
+        state.error = null;
+
+        // Set the tokens in the service for API calls
+        authService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        todoService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        profileService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        emailService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        toolExecutionService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        userTaskService.setAuthToken(
+          `JWT ${action.payload.authToken};;;;;${action.payload.refreshToken}`
+        );
+        scenariosService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        regenerateTextService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+        contactService.setAuthToken(
+          action.payload.authToken,
+          action.payload.refreshToken
+        );
+      })
+      .addCase(appleSignInAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Apple sign in failed";
       })
       // Sign Up
       .addCase(signUpAsync.pending, (state) => {

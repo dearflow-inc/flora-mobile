@@ -1,8 +1,10 @@
 import GoogleIcon from "@/../assets/tools/Google.svg";
+import { AppleIcon } from "@/components/AppleIcon";
 import { OAUTH_CONFIG } from "@/config/api";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { secureStorage } from "@/services/secureStorage";
 import {
+  appleSignInAsync,
   clearError,
   googleSignInAsync,
   signInAsync,
@@ -10,6 +12,7 @@ import {
 import { fetchMyProfileAsync } from "@/store/slices/profileSlice";
 import { LoginCredentials, User } from "@/types/auth";
 import { AuthStackParamList } from "@/types/navigation";
+import { initiateAppleSignIn, isAppleSignInAvailable } from "@/utils/appleAuth";
 import {
   handleGoogleSignInCallback,
   initiateGoogleSignIn,
@@ -41,6 +44,8 @@ export const LoginScreen = () => {
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
   const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
+  const [isAppleSigningIn, setIsAppleSigningIn] = useState(false);
+  const [isAppleAvailable, setIsAppleAvailable] = useState(false);
 
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: "",
@@ -51,6 +56,16 @@ export const LoginScreen = () => {
     email?: string;
     password?: string;
   }>({});
+
+  // Check Apple Sign-In availability on component mount
+  useEffect(() => {
+    const checkAppleAvailability = async () => {
+      const available = await isAppleSignInAvailable();
+      setIsAppleAvailable(available);
+    };
+
+    checkAppleAvailability();
+  }, []);
 
   // Helper function to get device ID
   const getDeviceId = async (): Promise<string> => {
@@ -192,6 +207,47 @@ export const LoginScreen = () => {
     }
   };
 
+  const handleAppleSignIn = async () => {
+    if (!isAppleAvailable) {
+      Alert.alert("Error", "Apple Sign-In is not available on this device.");
+      return;
+    }
+
+    setIsAppleSigningIn(true);
+
+    try {
+      // Initiate Apple Sign-In flow
+      const appleCredentials = await initiateAppleSignIn();
+
+      // Dispatch Apple Sign-In action
+      await dispatch(appleSignInAsync(appleCredentials)).unwrap();
+
+      // Fetch profile immediately
+      try {
+        await dispatch(fetchMyProfileAsync()).unwrap();
+        console.log("Profile fetched successfully after Apple sign-in");
+      } catch (profileError) {
+        console.warn(
+          "Failed to fetch profile after Apple sign-in:",
+          profileError
+        );
+      }
+    } catch (error: any) {
+      console.error("Apple Sign-In error:", error);
+      if (error.message === "Apple Sign-In was cancelled") {
+        // Don't show alert for user cancellation
+        console.log("Apple Sign-In was cancelled by user");
+      } else {
+        Alert.alert(
+          "Error",
+          error.message || "Apple Sign-In failed. Please try again."
+        );
+      }
+    } finally {
+      setIsAppleSigningIn(false);
+    }
+  };
+
   const handleForgotPassword = () => {
     navigation.navigate("ForgotPassword");
   };
@@ -289,6 +345,24 @@ export const LoginScreen = () => {
               {isGoogleSigningIn ? "Signing In..." : "Sign in with Google"}
             </Text>
           </TouchableOpacity>
+
+          {Platform.OS === "ios" && isAppleAvailable && (
+            <TouchableOpacity
+              style={[
+                styles.appleButton,
+                isAppleSigningIn && styles.buttonDisabled,
+              ]}
+              onPress={handleAppleSignIn}
+              disabled={isAppleSigningIn}
+            >
+              <View style={styles.appleIcon}>
+                <AppleIcon width={20} height={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.appleButtonText}>
+                {isAppleSigningIn ? "Signing In..." : "Sign in with Apple"}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity onPress={handleForgotPassword}>
             <Text style={styles.forgotPassword}>Forgot Password?</Text>
@@ -398,6 +472,23 @@ const styles = StyleSheet.create({
   },
   googleButtonText: {
     color: "#333333",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  appleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000000", // Apple's dark background
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  appleIcon: {
+    marginRight: 10,
+  },
+  appleButtonText: {
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
   },

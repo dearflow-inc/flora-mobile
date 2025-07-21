@@ -12,6 +12,7 @@
       }
     },
     "preview": {
+      "developmentClient": true,
       "distribution": "internal",
       "env": {
         "EAS_BUILD_PROFILE": "preview"
@@ -21,7 +22,7 @@
       "autoIncrement": true,
       "distribution": "store",
       "env": {
-        "EAS_BUILD_PROFILE": "preview"
+        "EAS_BUILD_PROFILE": "testflight"
       }
     },
     "production": {
