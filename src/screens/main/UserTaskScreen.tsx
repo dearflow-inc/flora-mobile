@@ -604,7 +604,9 @@ export const UserTaskScreen = () => {
       return "Done";
     }
     const actionCount = pendingActions?.length || 0;
-    return `Approve ${actionCount} Action${actionCount > 1 ? "s" : ""}`;
+    return isSuggestionsExpanded
+      ? `Approve ${actionCount} Action${actionCount > 1 ? "s" : ""}`
+      : `Show ${actionCount} Action${actionCount > 1 ? "s" : ""}`;
   };
 
   // Helper function to generate suggestion text based on action types
@@ -908,7 +910,11 @@ export const UserTaskScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionButton, styles.completeButton]}
-              onPress={handleCompleteTask}
+              onPress={
+                isSuggestionsExpanded
+                  ? handleCompleteTask
+                  : handleToggleSuggestions
+              }
             >
               <MaterialIcons name="check" size={20} color="#FFFFFF" />
               <Text style={styles.actionButtonText}>
