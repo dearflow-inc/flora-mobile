@@ -1,21 +1,21 @@
-import {
-  createSlice,
-  createAsyncThunk,
-  PayloadAction,
-  createSelector,
-} from "@reduxjs/toolkit";
-import { RootState } from "../index";
 import { scenariosService } from "@/services/scenariosService";
 import {
-  Scenarios,
   ContextView,
   CreateContextViewRequest,
-  UpdateContextViewRequest,
-  ScenarioItem,
   CreateScenarioItemRequest,
-  ScenarioTag,
   CreateScenarioTagRequest,
+  ScenarioItem,
+  Scenarios,
+  ScenarioTag,
+  UpdateContextViewRequest,
 } from "@/types/scenarios";
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+  PayloadAction,
+} from "@reduxjs/toolkit";
+import { RootState } from "../index";
 
 interface ScenariosState {
   scenarios: Scenarios | null;
@@ -446,20 +446,16 @@ export const selectContextViewsLoading = (state: RootState) =>
 export const selectContextViewsError = (state: RootState) =>
   state.scenarios.contextViewsError;
 
-export const selectScenarioItems = createSelector(
-  [(state: RootState) => state.scenarios.scenarios?.scenarioItems],
-  (scenarioItems) => scenarioItems || []
-);
+export const selectScenarioItems = (state: RootState) =>
+  state.scenarios.scenarios?.scenarioItems || [];
 
 export const selectScenarioItemsLoading = (state: RootState) =>
   state.scenarios.scenarioItemsLoading;
 export const selectScenarioItemsError = (state: RootState) =>
   state.scenarios.scenarioItemsError;
 
-export const selectScenarioTags = createSelector(
-  [(state: RootState) => state.scenarios.scenarios?.tags],
-  (tags) => tags || []
-);
+export const selectScenarioTags = (state: RootState) =>
+  state.scenarios.scenarios?.tags || [];
 
 export const selectScenarioTagsLoading = (state: RootState) =>
   state.scenarios.tagsLoading;

@@ -5,6 +5,7 @@ import { ContactSupportScreen } from "@/screens/main/ContactSupportScreen";
 import { EmailsScreen } from "@/screens/main/EmailsScreen";
 import { EmailThreadScreen } from "@/screens/main/EmailThreadScreen";
 import { ProfileScreen } from "@/screens/main/ProfileScreen";
+import { ScenariosScreen } from "@/screens/main/ScenariosScreen";
 import { SettingsScreen } from "@/screens/main/SettingsScreen";
 import { TodoDetailScreen } from "@/screens/main/TodoDetailScreen";
 import { TodosScreen } from "@/screens/main/TodosScreen";
@@ -99,6 +100,11 @@ export const AppStackNavigator = () => {
         name="ContactSupport"
         component={ContactSupportScreen}
         options={{ title: "Contact Support" }}
+      />
+      <Stack.Screen
+        name="Scenarios"
+        component={ScenariosScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="TodoDetail"

@@ -1,14 +1,15 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/useTheme";
 import { useAppDispatch } from "@/hooks/redux";
+import { useTheme } from "@/hooks/useTheme";
 import { completeSuggestedAction } from "@/store/slices/chatSlice";
 import {
   ChatMessageSuggestedAction,
   SuggestedActionType,
 } from "@/types/suggestedAction";
+import { MaterialIcons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { Alert, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { ConnectInboxModal } from "./ConnectInboxModal";
+import { SpacesDrawer } from "./spaces/SpacesDrawer";
 
 interface SuggestedActionProps {
   chatId: string;
@@ -17,6 +18,7 @@ interface SuggestedActionProps {
   onSetChatInput: (input: string) => void;
   onSendSuggestedAction: (actionText: string) => Promise<void>;
   disabled?: boolean;
+  shouldShowSuggestedActions?: boolean;
 }
 
 export const SuggestedAction = ({
@@ -26,11 +28,13 @@ export const SuggestedAction = ({
   onSetChatInput,
   onSendSuggestedAction,
   disabled = false,
+  shouldShowSuggestedActions = false,
 }: SuggestedActionProps) => {
   const { colors } = useTheme();
   const dispatch = useAppDispatch();
   const styles = createStyles(colors);
   const [showConnectInboxModal, setShowConnectInboxModal] = useState(false);
+  const [showSpacesDrawer, setShowSpacesDrawer] = useState(false);
 
   const handleCompleteAction = () => {
     if (action.complete || disabled) return;
@@ -66,14 +70,21 @@ export const SuggestedAction = ({
   };
 
   const handleDisplay = () => {
-    Alert.alert("Display Content", `Display: ${action.entityId}`, [
-      { text: "OK" },
-    ]);
+    handleCompleteAction();
+
+    if (action.entityId === "spaces-overview") {
+      setShowSpacesDrawer(true);
+    } else {
+      Alert.alert("Display Content", `Display: ${action.entityId}`, [
+        { text: "OK" },
+      ]);
+    }
   };
 
   return (
     <>
-      {action.type === SuggestedActionType.SUGGESTED_RESPONSE_BUTTON &&
+      {shouldShowSuggestedActions &&
+        action.type === SuggestedActionType.SUGGESTED_RESPONSE_BUTTON &&
         !disabled && (
           <TouchableOpacity
             style={[styles.responseButton, disabled && styles.disabled]}
@@ -152,6 +163,10 @@ export const SuggestedAction = ({
           Alert.alert("Success", "Inbox connected successfully!");
         }}
         updateOnboarding={false}
+      />
+      <SpacesDrawer
+        visible={showSpacesDrawer}
+        onClose={() => setShowSpacesDrawer(false)}
       />
     </>
   );

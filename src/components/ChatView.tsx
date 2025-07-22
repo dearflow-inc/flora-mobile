@@ -526,21 +526,20 @@ export const ChatView: React.FC<ChatViewProps> = ({
         )}
 
         {/* Render suggested actions */}
-        {shouldShowSuggestedActions && (
-          <View style={styles.suggestedActionsContainer}>
-            {item.message.suggestedActions!.map((action, index) => (
-              <SuggestedAction
-                key={action.id + index}
-                chatId={chatId || currentChatId!}
-                chatMessageId={item.id}
-                action={action}
-                onSetChatInput={setInputText}
-                onSendSuggestedAction={sendSuggestedAction}
-                disabled={action.complete}
-              />
-            ))}
-          </View>
-        )}
+        <View style={styles.suggestedActionsContainer}>
+          {item.message.suggestedActions!.map((action, index) => (
+            <SuggestedAction
+              key={action.id + index}
+              chatId={chatId || currentChatId!}
+              chatMessageId={item.id}
+              action={action}
+              onSetChatInput={setInputText}
+              onSendSuggestedAction={sendSuggestedAction}
+              disabled={action.complete}
+              shouldShowSuggestedActions={shouldShowSuggestedActions}
+            />
+          ))}
+        </View>
         <View style={styles.messageFooter}>
           <Text style={[styles.timestamp, isUser && styles.userTimestamp]}>
             {new Date(item.message.createdAt).toLocaleTimeString([], {

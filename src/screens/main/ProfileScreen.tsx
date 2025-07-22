@@ -466,46 +466,57 @@ export const ProfileScreen = () => {
               </TouchableOpacity>
             </View>
           </View>
-
-          <View style={styles.profileInfo}>
-            <Text style={styles.sectionTitle}>Profile Information</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Name:</Text>
-              <Text style={styles.infoValue}>
-                {currentProfile?.name || "Not set"}
-              </Text>
+          <View style={styles.subscriptionSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Profile Information</Text>
+              <TouchableOpacity
+                style={styles.editIconButton}
+                onPress={handleEditProfile}
+              >
+                <Text style={styles.editIcon}>✏️</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email:</Text>
-              <Text style={styles.infoValue}>
-                {currentProfile?.email || "Not set"}
-              </Text>
-            </View>
-            {currentProfile?.phone && (
+            <View style={styles.profileInfo}>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Phone:</Text>
-                <Text style={styles.infoValue}>{currentProfile.phone}</Text>
+                <Text style={styles.infoLabel}>Name:</Text>
+                <Text style={styles.infoValue}>
+                  {currentProfile?.name || "Not set"}
+                </Text>
               </View>
-            )}
-            {currentProfile?.whatsApp && (
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>WhatsApp:</Text>
-                <Text style={styles.infoValue}>{currentProfile.whatsApp}</Text>
+                <Text style={styles.infoLabel}>Email:</Text>
+                <Text style={styles.infoValue}>
+                  {currentProfile?.email || "Not set"}
+                </Text>
               </View>
-            )}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Time Zone:</Text>
-              <Text style={styles.infoValue}>
-                {currentProfile?.mainTimeZone
-                  ? getTimezoneLabel(currentProfile.mainTimeZone)
-                  : "UTC"}
-              </Text>
-            </View>
-            <View style={styles.infoColumn}>
-              <Text style={styles.infoLabel}>Description:</Text>
-              <Text style={styles.infoValueLeft}>
-                {currentProfile?.description || "Not set"}
-              </Text>
+              {currentProfile?.phone && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Phone:</Text>
+                  <Text style={styles.infoValue}>{currentProfile.phone}</Text>
+                </View>
+              )}
+              {currentProfile?.whatsApp && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>WhatsApp:</Text>
+                  <Text style={styles.infoValue}>
+                    {currentProfile.whatsApp}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Time Zone:</Text>
+                <Text style={styles.infoValue}>
+                  {currentProfile?.mainTimeZone
+                    ? getTimezoneLabel(currentProfile.mainTimeZone)
+                    : "UTC"}
+                </Text>
+              </View>
+              <View style={styles.infoColumn}>
+                <Text style={styles.infoLabel}>Description:</Text>
+                <Text style={styles.infoValueLeft}>
+                  {currentProfile?.description || "Not set"}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -524,9 +535,9 @@ export const ProfileScreen = () => {
           <View style={styles.actions}>
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={handleEditProfile}
+              onPress={() => navigation.navigate("Scenarios" as never)}
             >
-              <Text style={styles.actionButtonText}>Edit Profile</Text>
+              <Text style={styles.actionButtonText}>Show Scenarios</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButton}
@@ -842,7 +853,19 @@ const createStyles = (colors: any) =>
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: 8,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    editIconButton: {
+      padding: 4,
+    },
+    editIcon: {
+      fontSize: 20,
     },
     infoRow: {
       flexDirection: "row",
