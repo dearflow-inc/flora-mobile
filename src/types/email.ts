@@ -17,10 +17,10 @@ export enum AuthorType {
 }
 
 export interface Message {
-  content: Array<{
+  content: {
     type: string;
     body: string;
-  }>;
+  }[];
 }
 
 export interface TimeFrame {
@@ -108,24 +108,24 @@ export interface Email {
   emailId: string;
   subject: string;
   from: Author;
-  to: Array<Author>;
-  cc: Array<Author>;
-  bcc: Array<Author>;
-  reasons: Array<EmailReason>;
+  to: Author[];
+  cc: Author[];
+  bcc: Author[];
+  reasons: EmailReason[];
   message: Message;
-  externalLabels: Array<EmailLabel>;
-  internalTags: Array<string>;
-  styleLabels: Array<StyleLabel>;
+  externalLabels: EmailLabel[];
+  internalTags: string[];
+  styleLabels: StyleLabel[];
   sentByDearFlow?: boolean;
   sent: Date;
   classificationBlockedDueToPlan?: boolean;
   status?: EmailStatus;
-  userTasks?: Array<string>;
+  userTasks?: string[];
   createdAt: Date;
   updatedAt?: Date;
   isEncrypted?: boolean;
-  userLookSessions: Array<TimeFrame>;
-  unsubscribeActions?: Array<EmailUnsubscribeAction>;
+  userLookSessions: TimeFrame[];
+  unsubscribeActions?: EmailUnsubscribeAction[];
   isOutgoing: boolean;
   likelyhoodToBeFromHuman: number;
   category?: EmailCategory;
@@ -143,23 +143,23 @@ export interface EmailWithoutContent {
   emailId: string;
   subject: string;
   from: Author;
-  to: Array<Author>;
-  cc: Array<Author>;
-  bcc: Array<Author>;
-  reasons: Array<EmailReason>;
-  externalLabels: Array<EmailLabel>;
-  internalTags: Array<string>;
-  styleLabels: Array<StyleLabel>;
+  to: Author[];
+  cc: Author[];
+  bcc: Author[];
+  reasons: EmailReason[];
+  externalLabels: EmailLabel[];
+  internalTags: string[];
+  styleLabels: StyleLabel[];
   sentByDearFlow?: boolean;
   sent: Date;
   classificationBlockedDueToPlan?: boolean;
   status?: EmailStatus;
-  userTasks?: Array<string>;
+  userTasks?: string[];
   createdAt: Date;
   updatedAt?: Date;
   isEncrypted?: boolean;
-  userLookSessions: Array<TimeFrame>;
-  unsubscribeActions?: Array<EmailUnsubscribeAction>;
+  userLookSessions: TimeFrame[];
+  unsubscribeActions?: EmailUnsubscribeAction[];
   isOutgoing: boolean;
   likelyhoodToBeFromHuman: number;
   category?: EmailCategory;
@@ -179,12 +179,12 @@ export interface UpdateEmailStatusRequest {
 
 export interface SendEmailRequest {
   externalId: string;
-  to: Array<Author>;
+  to: Author[];
   subject: string;
   emailBody: string;
-  cc?: Array<Author>;
-  bcc?: Array<Author>;
-  attachments?: Array<any>;
+  cc?: Author[];
+  bcc?: Author[];
+  attachments?: any[];
   followUpSettings?: any;
 }
 
@@ -194,11 +194,11 @@ export interface AddLookSessionRequest {
 
 // Response Types
 export interface EmailResponse {
-  emails: Array<Email>;
+  emails: Email[];
 }
 
 export interface EmailWithoutContentResponse {
-  emails: Array<EmailWithoutContent>;
+  emails: EmailWithoutContent[];
 }
 
 export interface SingleEmailResponse {
@@ -206,5 +206,5 @@ export interface SingleEmailResponse {
 }
 
 export interface MultipleEmailsResponse {
-  emails: Array<Email>;
+  emails: Email[];
 }
