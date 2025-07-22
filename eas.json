@@ -7,6 +7,10 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "ios": {
+        "credentialsSource": "remote",
+        "autoIncrement": "buildNumber"
+      },
       "env": {
         "NODE_ENV": "development"
       }
@@ -14,6 +18,10 @@
     "preview": {
       "developmentClient": true,
       "distribution": "internal",
+      "ios": {
+        "credentialsSource": "remote",
+        "autoIncrement": "buildNumber"
+      },
       "env": {
         "EAS_BUILD_PROFILE": "preview"
       }
@@ -21,12 +29,20 @@
     "testflight": {
       "autoIncrement": true,
       "distribution": "store",
+      "ios": {
+        "credentialsSource": "remote",
+        "autoIncrement": "buildNumber"
+      },
       "env": {
         "EAS_BUILD_PROFILE": "testflight"
       }
     },
     "production": {
       "autoIncrement": true,
+      "ios": {
+        "credentialsSource": "remote",
+        "autoIncrement": "buildNumber"
+      },
       "env": {
         "EAS_BUILD_PROFILE": "production"
       }
