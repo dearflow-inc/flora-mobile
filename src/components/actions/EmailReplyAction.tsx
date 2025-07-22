@@ -175,7 +175,6 @@ export const EmailReplyAction: React.FC<EmailReplyActionProps> = ({
       {/* Options Chips */}
       {options.length > 0 && (
         <View style={styles.optionsContainer}>
-          <Text style={styles.sectionTitle}>Reply Options:</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}

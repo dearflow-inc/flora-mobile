@@ -190,12 +190,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     console.log("WebSocket: Starting connection...");
     localDispatch({ type: "SET_CONNECTING", payload: true });
 
+    // Try connection without extra headers first (like web app)
     const connection = io(`${API_CONFIG.API_BASE_URL}/primary-gateway`, {
       withCredentials: true,
       extraHeaders: {
         Authorization: `JWT ${authToken};;;;;${refreshToken}`,
       },
-      transports: ["websocket"],
       timeout: 10000, // 10 second timeout
       reconnection: true,
       reconnectionAttempts: 5,
@@ -205,7 +205,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     connectionRef.current = connection;
 
     connection.on("connect", async () => {
-      console.log("WebSocket: Successfully connected");
       connection.emit("heyo-fucker", {
         deviceId: await secureStorage.getItem("device_id"),
       });
@@ -264,16 +263,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       localDispatch({ type: "INCREMENT_ATTEMPTS" });
     });
 
-    return () => {
-      cleanupConnection();
-    };
-  }, [
-    isAuthenticated,
-    authToken,
-    refreshToken,
-    currentProfile,
-    hasProfileBeenFetched,
-  ]);
+    return () => {};
+  }, [isAuthenticated, authToken, refreshToken, hasProfileBeenFetched]);
 
   // Handle app state changes (foreground/background)
   useEffect(() => {
