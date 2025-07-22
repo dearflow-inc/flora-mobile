@@ -117,6 +117,11 @@ export const ProfileScreen = () => {
     navigation.navigate("Settings" as never);
   };
 
+  const handleSupport = () => {
+    // Navigate to support screen
+    navigation.navigate("Support" as never);
+  };
+
   const handleSaveProfile = async () => {
     try {
       const updateData: UpdateMyProfileRequest = {
@@ -422,6 +427,23 @@ export const ProfileScreen = () => {
             <Text style={styles.email}>
               {currentProfile?.email || "user@example.com"}
             </Text>
+          </View>
+
+          {/* Support Section */}
+          <View style={styles.supportSection}>
+            <Text style={styles.sectionTitle}>Need Help?</Text>
+            <View style={styles.supportCard}>
+              <Text style={styles.supportDescription}>
+                Get help with your questions, report issues, or request new
+                features
+              </Text>
+              <TouchableOpacity
+                style={styles.supportButton}
+                onPress={handleSupport}
+              >
+                <Text style={styles.supportButtonText}>Get Support</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Subscription Section */}
@@ -1154,5 +1176,39 @@ const createStyles = (colors: any) =>
       fontSize: 16,
       fontWeight: "600",
       color: colors.text,
+    },
+    // Support section styles
+    supportSection: {
+      marginBottom: 20,
+    },
+    supportCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 20,
+      shadowColor: colors.shadow,
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    supportDescription: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: 16,
+      textAlign: "center",
+    },
+    supportButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: "center",
+    },
+    supportButtonText: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: "600",
     },
   });

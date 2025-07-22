@@ -29,6 +29,7 @@ export type AppStackParamList = {
   Profile: undefined;
   Settings: undefined;
   ContactSupport: undefined;
+  Support: undefined;
   Scenarios: undefined;
   TodoDetail: { todoId: string };
   ToolExecution: {

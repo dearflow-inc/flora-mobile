@@ -116,43 +116,25 @@ export const SuggestedAction = ({
         </TouchableOpacity>
       )}
 
-      {action.type === SuggestedActionType.SUGGEST_BUY_PLAN && !disabled && (
+      {action.type === SuggestedActionType.SUGGEST_BUY_PLAN && (
         <TouchableOpacity
-          style={[styles.planButton, disabled && styles.disabled]}
+          style={[styles.planButton]}
           onPress={handleBuyPlan}
-          disabled={disabled}
           activeOpacity={0.7}
         >
-          <MaterialIcons
-            name="upgrade"
-            size={16}
-            color={disabled ? colors.textSecondary : "#FF6B35"}
-          />
-          <Text
-            style={[styles.planButtonText, disabled && styles.disabledText]}
-          >
-            Upgrade Plan
-          </Text>
+          <MaterialIcons name="upgrade" size={16} color={"#FF6B35"} />
+          <Text style={[styles.planButtonText]}>Upgrade Plan</Text>
         </TouchableOpacity>
       )}
 
       {action.type === SuggestedActionType.DISPLAY && (
         <TouchableOpacity
-          style={[styles.displayButton, disabled && styles.disabled]}
+          style={[styles.displayButton]}
           onPress={handleDisplay}
-          disabled={disabled}
           activeOpacity={0.7}
         >
-          <MaterialIcons
-            name="visibility"
-            size={16}
-            color={disabled ? colors.textSecondary : colors.primary}
-          />
-          <Text
-            style={[styles.displayButtonText, disabled && styles.disabledText]}
-          >
-            {action.entityId}
-          </Text>
+          <MaterialIcons name="visibility" size={16} color={colors.primary} />
+          <Text style={[styles.displayButtonText]}>{action.entityId}</Text>
         </TouchableOpacity>
       )}
 
