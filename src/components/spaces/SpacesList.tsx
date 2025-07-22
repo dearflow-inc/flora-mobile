@@ -61,7 +61,7 @@ export const SpacesList: React.FC<SpacesListProps> = ({
 
   useEffect(() => {
     fetchScenarios();
-  }, [fetchScenarios]);
+  }, []);
 
   useEffect(() => {
     if (error) {

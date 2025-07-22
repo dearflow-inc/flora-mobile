@@ -1,42 +1,36 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  Alert,
-  ActivityIndicator,
-  TextInput,
-  Linking,
-  Modal,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useTheme } from "@/hooks/useTheme";
-import {
-  setTheme,
-  resetAppData,
-  saveThemeAsync,
-} from "@/store/slices/appSlice";
+import { resetAppData, saveThemeAsync } from "@/store/slices/appSlice";
 import { signOutAsync } from "@/store/slices/authSlice";
+import { clearCurrentChat } from "@/store/slices/chatSlice";
 import {
-  fetchMyProfileAsync,
-  updateMyProfileAsync,
+  clearAdminProfiles,
   clearCurrentProfile,
   clearDashboardData,
-  clearProfileSharing,
-  clearAdminProfiles,
   clearOnboardingChatId,
+  clearProfileSharing,
+  fetchMyProfileAsync,
+  updateMyProfileAsync,
 } from "@/store/slices/profileSlice";
-import { clearCurrentChat } from "@/store/slices/chatSlice";
 import { resetTodos } from "@/store/slices/todoSlice";
 import {
   ProfileEmailPreference,
   ProfileEmailPreferenceType,
-  UpdateMyProfileRequest,
 } from "@/types/profile";
+import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const timezones = [
   { name: "UTC", value: "UTC" },
@@ -175,6 +169,10 @@ export const SettingsScreen = () => {
 
   const handleContactSupport = () => {
     navigation.navigate("ContactSupport" as never);
+  };
+
+  const handleSupport = () => {
+    navigation.navigate("Support" as never);
   };
 
   const handleClearData = () => {
@@ -345,6 +343,9 @@ export const SettingsScreen = () => {
             onPress={handleContactSupport}
           >
             <Text style={styles.actionButtonText}>Contact Support</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={handleSupport}>
+            <Text style={styles.actionButtonText}>Support & Help</Text>
           </TouchableOpacity>
         </View>
 
