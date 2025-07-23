@@ -266,6 +266,22 @@ class AuthService {
     }
   }
 
+  async deleteAccount(): Promise<{ success: boolean }> {
+    try {
+      const response = await this.api.delete("/authentication/delete");
+
+      if (response.data.error) {
+        throw new Error(response.data.message || "Account deletion failed");
+      }
+
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Account deletion failed"
+      );
+    }
+  }
+
   // Helper method to set base URL if needed
   setBaseURL(url: string): void {
     this.api.defaults.baseURL = url;

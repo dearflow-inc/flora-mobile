@@ -233,7 +233,12 @@ export const EmailsScreen = () => {
             {
               parameterId: "body",
               type: ParameterType.ARRAY,
-              value: "[]",
+              value: JSON.stringify([
+                {
+                  body: "",
+                  type: "text/html",
+                },
+              ]),
             },
           ],
           internalListeners: [],

@@ -256,6 +256,31 @@ export const fetchUsageAsync = createAsyncThunk<
   }
 });
 
+export const deleteAccountAsync = createAsyncThunk(
+  "auth/deleteAccount",
+  async (_, { rejectWithValue, dispatch }) => {
+    try {
+      await authService.deleteAccount();
+      await secureStorage.removeItem("auth_token");
+      await secureStorage.removeItem("refresh_token");
+      authService.removeAuthToken();
+      todoService.removeAuthToken();
+      profileService.removeAuthToken();
+      emailService.removeAuthToken();
+      toolExecutionService.removeAuthToken();
+      userTaskService.removeAuthToken();
+      scenariosService.removeAuthToken();
+      regenerateTextService.removeAuthToken();
+      contactService.removeAuthToken();
+
+      // Clear profile data
+      dispatch(clearAllProfileData());
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Account deletion failed");
+    }
+  }
+);
+
 export const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -746,6 +771,25 @@ export const authSlice = createSlice({
       .addCase(fetchUsageAsync.rejected, (state, action) => {
         state.isFetchingUsage = false;
         state.error = action.payload || "Failed to fetch usage";
+      })
+      // Delete Account
+      .addCase(deleteAccountAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteAccountAsync.fulfilled, (state) => {
+        state.isLoading = false;
+        state.user = null;
+        state.authToken = null;
+        state.refreshToken = null;
+        state.isAuthenticated = false;
+        state.error = null;
+        state.emailUsage = null;
+        state.isFetchingUsage = false;
+      })
+      .addCase(deleteAccountAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = (action.payload as string) ?? "Account deletion failed";
       });
   },
 });

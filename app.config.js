@@ -104,13 +104,13 @@ export default {
       APPLE_SERVICE_ID: "ai.dearflow.email",
       // Environment-specific configurations
       DEEP_LINK_SCHEME: IS_DEV
-        ? "exp://192.168.43.14:8081/--"
+        ? "exp://192.168.43.74:8081/--"
         : "ai.dearflow.email:/",
       API_BASE_URL: IS_PRODUCTION
         ? "https://api.dearflow.ai" // Replace with your production API URL
         : IS_TESTFLIGHT
         ? "https://api.beta.dearflow.ai" // Replace with your staging API URL
-        : "http://192.168.43.14:4000", // Replace with your computer's local IP address
+        : "http://192.168.43.74:4000", // Replace with your computer's local IP address
       eas: {
         projectId: "122b3dc0-2f1d-4851-acc7-9beed4d4a0a5",
       },

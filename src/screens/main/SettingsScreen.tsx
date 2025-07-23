@@ -1,7 +1,7 @@
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useTheme } from "@/hooks/useTheme";
 import { resetAppData, saveThemeAsync } from "@/store/slices/appSlice";
-import { signOutAsync } from "@/store/slices/authSlice";
+import { deleteAccountAsync, signOutAsync } from "@/store/slices/authSlice";
 import { clearCurrentChat } from "@/store/slices/chatSlice";
 import {
   clearAdminProfiles,
@@ -212,6 +212,21 @@ export const SettingsScreen = () => {
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete Account",
+          style: "destructive",
+          onPress: () => dispatch(deleteAccountAsync()),
+        },
+      ]
+    );
+  };
+
   const formatEmailPreferenceType = (type: ProfileEmailPreferenceType) => {
     switch (type) {
       case ProfileEmailPreferenceType.NEWSLETTER:
@@ -356,6 +371,12 @@ export const SettingsScreen = () => {
             onPress={handleClearData}
           >
             <Text style={styles.dangerButtonText}>Clear App Data</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dangerButton}
+            onPress={handleDeleteAccount}
+          >
+            <Text style={styles.dangerButtonText}>Delete Account</Text>
           </TouchableOpacity>
         </View>
 

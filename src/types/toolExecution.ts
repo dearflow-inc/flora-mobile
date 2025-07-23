@@ -56,11 +56,11 @@ export interface ToolExecution {
   dfOwner: Author;
   toolProvider: ToolProvider;
   toolEndpointAction: ToolEndpointAction;
-  input: Array<ParameterValue>;
+  input: ParameterValue[];
   successful?: boolean;
   executedAt?: Date;
-  output: Array<ParameterValue>;
-  internalListeners: Array<SystemReference>;
+  output: ParameterValue[];
+  internalListeners: SystemReference[];
   createdAt: Date;
   updatedAt: Date;
   cronjobManagerId?: string;
@@ -70,12 +70,12 @@ export interface ToolExecution {
 
 // Email Draft Data (parsed from tool execution parameters)
 export interface EmailDraftData {
-  to: Array<{ id: string; email: string }>;
-  cc: Array<{ id: string; email: string }>;
-  bcc: Array<{ id: string; email: string }>;
+  to: { id: string; email: string }[];
+  cc: { id: string; email: string }[];
+  bcc: { id: string; email: string }[];
   subject: string;
   body: string;
-  attachments: Array<string>;
+  attachments: string[];
   followUpSettings?: {
     followUpRequired: boolean;
     followUpAt?: Date;
@@ -86,22 +86,22 @@ export interface EmailDraftData {
 // Request Types
 export interface CreateToolExecutionRequest {
   toolEndpointAction: ToolEndpointAction;
-  input: Array<ParameterValue>;
-  internalListeners: Array<SystemReference>;
+  input: ParameterValue[];
+  internalListeners: SystemReference[];
 }
 
 export interface UpdateToolExecutionRequest {
-  input: Array<ParameterValue>;
+  input: ParameterValue[];
 }
 
 export interface ExecuteToolExecutionRequest {
-  input: Array<ParameterValue>;
+  input: ParameterValue[];
 }
 
 export interface ScheduleToolExecutionRequest {
   schedule: string; // cron expression
   timeZone: string;
-  input: Array<ParameterValue>;
+  input: ParameterValue[];
 }
 
 // Response Types
@@ -110,7 +110,7 @@ export interface ToolExecutionResponse {
 }
 
 export interface ToolExecutionsResponse {
-  toolExecutions: Array<ToolExecution>;
+  toolExecutions: ToolExecution[];
 }
 
 // Helper function to parse email draft data from tool execution
@@ -153,6 +153,25 @@ export const parseEmailDraftFromToolExecution = (
           )
           .join("");
       }
+      // Handle case where body might be a string directly
+      const bodyValue = getParameterValue("body");
+      if (typeof bodyValue === "string" && bodyValue.trim() !== "") {
+        try {
+          // Try to parse as JSON in case it's a stringified array
+          const parsed = JSON.parse(bodyValue);
+          if (Array.isArray(parsed)) {
+            return parsed
+              .map(
+                (content: any) =>
+                  content?.body?.split("\n").join("<br />") || ""
+              )
+              .join("");
+          }
+        } catch {
+          // If it's not JSON, treat it as plain text
+          return bodyValue;
+        }
+      }
       return "";
     } catch {
       return "";
@@ -162,7 +181,7 @@ export const parseEmailDraftFromToolExecution = (
   // Parse email arrays and ensure proper format
   const parseEmailArray = (
     parameterId: string
-  ): Array<{ id: string; email: string }> => {
+  ): { id: string; email: string }[] => {
     const emails = parseArrayParameter(parameterId);
     return emails.map((email: any) =>
       typeof email === "string" ? { id: email, email } : email
@@ -193,13 +212,13 @@ export const parseEmailDraftFromToolExecution = (
 // Helper function to create tool execution parameters from email draft data
 export const createEmailDraftParameters = (
   data: EmailDraftData
-): Array<ParameterValue> => {
+): ParameterValue[] => {
   const messageContent = {
     body: data.body || "",
     type: "text/html",
   };
 
-  const parameters: Array<ParameterValue> = [
+  const parameters: ParameterValue[] = [
     {
       parameterId: "subject",
       type: ParameterType.STRING,

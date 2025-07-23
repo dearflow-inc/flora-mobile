@@ -86,7 +86,7 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
         </TouchableOpacity>
 
         {/* Attachment Button */}
-        <TouchableOpacity
+        {/*  <TouchableOpacity
           style={styles.actionButton}
           onPress={onAttach}
           disabled={isLoading}
@@ -96,7 +96,7 @@ export const EmailActionBar: React.FC<EmailActionBarProps> = ({
             size={20}
             color={colors.textSecondary}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* Send Section */}

@@ -21,6 +21,7 @@ export const EmailBody: React.FC<EmailBodyProps> = ({
   disabled = false,
   hideSubject = false,
 }) => {
+  // Debug logging to see what's being passed
   const { colors } = useTheme();
   const [bodyHeight, setBodyHeight] = useState(100); // Start with minHeight
   const styles = createStyles(colors, bodyHeight);
