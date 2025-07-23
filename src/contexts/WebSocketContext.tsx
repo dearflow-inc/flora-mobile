@@ -233,13 +233,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       // Auto-reconnect if it wasn't a manual disconnect
       if (reason !== "io client disconnect" && isAuthenticated) {
         console.log("WebSocket: Attempting to reconnect...");
+
+        // Calculate delay using current attempt count before incrementing
+        const currentAttempts = state.connectionAttempts;
+        const delay = Math.min(1000 * Math.pow(2, currentAttempts), 30000);
+
         localDispatch({ type: "INCREMENT_ATTEMPTS" });
 
-        // Exponential backoff for reconnection
-        const delay = Math.min(
-          1000 * Math.pow(2, state.connectionAttempts),
-          30000
-        );
         reconnectTimeoutRef.current = setTimeout(() => {
           if (isAuthenticated && authToken && refreshToken) {
             console.log("WebSocket: Retrying connection after delay");
@@ -260,7 +260,20 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           isConnecting: false,
         },
       });
+
+      // Apply exponential backoff for connection errors too
+      const currentAttempts = state.connectionAttempts;
+      const delay = Math.min(1000 * Math.pow(2, currentAttempts), 30000);
+
       localDispatch({ type: "INCREMENT_ATTEMPTS" });
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        if (isAuthenticated && authToken && refreshToken) {
+          console.log("WebSocket: Retrying connection after error delay");
+          localDispatch({ type: "SET_CONNECTING", payload: true });
+          connection.connect();
+        }
+      }, delay);
     });
 
     return () => {};

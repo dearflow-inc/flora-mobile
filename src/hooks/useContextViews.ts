@@ -52,7 +52,7 @@ export const useContextViews = (contextViews: ContextView[]) => {
       }),
     ]).start();
 
-    setSelectedContextViewId(nextContextView.id);
+    setSelectedContextViewId(nextContextView?.id);
   };
 
   const switchToPreviousContextView = () => {
@@ -78,7 +78,7 @@ export const useContextViews = (contextViews: ContextView[]) => {
       }),
     ]).start();
 
-    setSelectedContextViewId(previousContextView.id);
+    setSelectedContextViewId(previousContextView?.id);
   };
 
   return {

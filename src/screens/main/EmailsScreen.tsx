@@ -155,7 +155,7 @@ export const EmailsScreen = () => {
         return emailContext?.emailId;
       })
       .filter(
-        (id): id is string => !!id && !emails.find((email) => email.id === id)
+        (id): id is string => !!id && !emails.find((email) => email?.id === id)
       );
 
     if (emailIdsToFetch.length > 0) {
@@ -241,7 +241,7 @@ export const EmailsScreen = () => {
       ).unwrap();
 
       navigation.navigate("ToolExecution", {
-        toolExecutionId: toolExecution.id,
+        toolExecutionId: toolExecution?.id,
         canBeDeleted: true,
       });
     } catch (error) {
